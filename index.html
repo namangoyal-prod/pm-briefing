@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Naman's Briefing</title>
+  <!-- No external SDK needed — uses GitHub Gist API via native fetch() -->
+  <style>
+:root{
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --bg:#f7f8fa;--surface:#fff;--surface-hover:#f0f2f5;
+  --text:#1a1d21;--text2:#3c4043;--text3:#7a7f87;--text4:#adb1b8;
+  --border:#e1e4e8;--border-subtle:#eef0f2;
+  --azure:#0066ff;--azure-soft:hsla(217,100%,50%,.08);--azure-hover:#0052cc;
+  --crimson:#dc2626;--crimson-soft:hsla(0,72%,51%,.08);
+  --emerald:#059669;--emerald-soft:hsla(160,84%,39%,.08);
+  --cider:#d97706;--cider-soft:hsla(38,92%,50%,.08);
+  --orchid:#7c3aed;--orchid-soft:hsla(263,70%,58%,.08);
+  --sapphire:#2563eb;--sapphire-soft:hsla(217,91%,60%,.08);
+  --shadow-low:0 1px 3px hsla(0,0%,0%,.06);
+  --shadow-high:0 4px 24px hsla(0,0%,0%,.1);
+  --sp1:2px;--sp2:4px;--sp3:6px;--sp4:8px;--sp5:12px;--sp6:16px;--sp7:20px;--sp8:24px;
+  --r-xs:4px;--r-sm:6px;--r-md:10px;--r-pill:999px
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.app{display:flex;height:100vh;overflow:hidden}
+.main{flex:1;overflow-y:auto;transition:margin-right .3s cubic-bezier(.4,0,.2,1)}
+.main.sidebar-open{margin-right:400px}
+
+.sidebar{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:100;box-shadow:var(--shadow-high)}
+.sidebar.open{transform:translateX(0)}
+.sidebar-toggle{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:101;width:32px;height:64px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:var(--r-sm) 0 0 var(--r-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text3);transition:all .2s;box-shadow:var(--shadow-low)}
+.sidebar-toggle:hover{background:var(--azure-soft);color:var(--azure);width:36px}
+.sidebar.open ~ .sidebar-toggle{right:400px}
+
+.topnav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border)}
+.topnav-inner{max-width:1280px;margin:0 auto;padding:0 var(--sp8);display:flex;align-items:center;height:56px;gap:var(--sp8)}
+.logo{font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.3px;white-space:nowrap}
+.logo span{color:var(--azure)}
+.nav-tabs{display:flex;gap:var(--sp2);flex:1}
+.nav-tab{padding:var(--sp3) var(--sp5);font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-radius:var(--r-pill);transition:all .15s;user-select:none;position:relative}
+.nav-tab:hover{color:var(--text2);background:var(--surface-hover)}
+.nav-tab.active{color:var(--azure);background:var(--azure-soft);font-weight:600}
+.nav-badge{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--crimson)}
+.nav-right{display:flex;align-items:center;gap:var(--sp4)}
+.refresh-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--azure);background:var(--azure-soft);border:1px solid transparent;border-radius:var(--r-pill);cursor:pointer;transition:all .2s;font-family:var(--font)}
+.refresh-btn:hover{background:var(--azure);color:#fff;border-color:var(--azure)}
+.refresh-btn.refreshing{pointer-events:none;opacity:.7}
+.refresh-btn.refreshing .refresh-icon{animation:spin .8s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.nav-ts{font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.filter-bar{display:flex;align-items:center;gap:var(--sp3);margin-bottom:var(--sp6);flex-wrap:wrap}
+.filter-chip{padding:6px 14px;border-radius:var(--r-pill);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;user-select:none}
+.filter-chip:hover{border-color:var(--azure);color:var(--azure)}
+.filter-chip.active{background:var(--azure);color:#fff;border-color:var(--azure)}
+.filter-label{font-size:11px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.6px}
+.filter-date{padding:5px 10px;border-radius:var(--r-sm);border:1px solid var(--border);font-family:var(--font);font-size:12px;color:var(--text2);outline:none}
+.filter-date:focus{border-color:var(--azure)}
+.filter-range-label{font-size:11px;color:var(--text3);font-weight:500;padding:4px 8px;background:var(--surface-hover);border-radius:var(--r-sm);white-space:nowrap}
+
+.content{max-width:1280px;margin:0 auto;padding:var(--sp6) var(--sp8)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+.section{margin-bottom:var(--sp6)}
+.section-title{font-size:11px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:var(--sp4);display:flex;align-items:center;gap:var(--sp3)}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border-subtle)}
+
+.stats{display:flex;gap:var(--sp4);margin-bottom:var(--sp6)}
+.stat{flex:1;background:var(--surface);border-radius:var(--r-md);padding:var(--sp5) var(--sp5);border:1px solid var(--border-subtle);transition:box-shadow .2s}
+.stat:hover{box-shadow:var(--shadow-low)}
+.stat-val{font-size:24px;font-weight:700;letter-spacing:-.5px}
+.stat-label{font-size:11px;color:var(--text3);margin-top:2px;font-weight:500}
+
+.grid{display:grid;gap:var(--sp5);margin-bottom:var(--sp5)}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g23{grid-template-columns:2fr 1fr}
+
+.card{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border-subtle);overflow:hidden;transition:box-shadow .2s}
+.card:hover{box-shadow:var(--shadow-low)}
+.card-hdr{padding:var(--sp4) var(--sp5);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-subtle);background:var(--bg)}
+.card-hdr-sub{font-size:11px;color:var(--text4);font-weight:400}
+.card-body{max-height:420px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+.card-body::-webkit-scrollbar{width:3px}
+.card-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+.li{padding:var(--sp4) var(--sp5);border-bottom:1px solid var(--border-subtle);cursor:pointer;transition:background .12s}
+.li:last-child{border-bottom:none}
+.li:hover{background:var(--surface-hover)}
+.li.read{opacity:.5}
+.li.read:hover{opacity:.75}
+
+.read-drawer{margin-top:2px;border-top:1px dashed var(--border)}
+.read-drawer-toggle{display:flex;align-items:center;gap:var(--sp2);padding:8px var(--sp5);cursor:pointer;font-size:11px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.5px;transition:all .15s;user-select:none;background:var(--bg)}
+.read-drawer-toggle:hover{color:var(--text3);background:var(--surface-hover)}
+.read-drawer-toggle .chevron{transition:transform .2s;font-size:10px}
+.read-drawer-toggle .chevron.open{transform:rotate(90deg)}
+.read-drawer-count{background:var(--surface-hover);padding:1px 7px;border-radius:var(--r-pill);font-size:10px;font-weight:500;color:var(--text4)}
+.read-drawer-items{display:none;border-top:1px solid var(--border-subtle)}
+.read-drawer-items.open{display:block}
+
+a.li,a.article,a.research-item{display:block;text-decoration:none;color:inherit;cursor:pointer}
+.li.kb-focus,.article.kb-focus,.research-item.kb-focus,.action-item.kb-focus,.cal-item.kb-focus{outline:2px solid var(--azure);outline-offset:-2px;background:var(--azure-soft) !important}
+.kb-hint{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:hsla(214,32%,14%,.88);color:#fff;padding:8px 20px;border-radius:var(--r-pill);font-size:11px;font-weight:500;letter-spacing:.3px;z-index:200;display:none;gap:12px;align-items:center;backdrop-filter:blur(8px)}
+.kb-hint.show{display:flex}
+.kb-key{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;background:hsla(0,0%,100%,.15);border-radius:4px;font-size:11px;font-weight:600;font-family:var(--font);margin:0 2px}
+
+.impact-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:var(--r-pill);font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.impact-high{background:var(--crimson-soft);color:var(--crimson)}
+.impact-medium{background:var(--cider-soft);color:var(--cider)}
+.impact-low{background:var(--emerald-soft);color:var(--emerald)}
+
+.sentiment-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:var(--r-pill);font-size:9px;font-weight:600;letter-spacing:.3px}
+.sentiment-positive{background:var(--emerald-soft);color:var(--emerald)}
+.sentiment-negative{background:var(--crimson-soft);color:var(--crimson)}
+.sentiment-mixed{background:var(--cider-soft);color:var(--cider)}
+.sentiment-alert{background:var(--orchid-soft);color:var(--orchid)}
+
+.new-marker{position:relative}
+.new-marker::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--azure);border-radius:0 2px 2px 0}
+.new-pulse{animation:newpulse 2s ease-out 1}
+@keyframes newpulse{0%{background:var(--azure-soft)}100%{background:transparent}}
+.li-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.li-text{font-size:13px;color:var(--text2);margin-top:var(--sp2);line-height:1.45}
+.li-meta{display:flex;gap:var(--sp3);margin-top:var(--sp2);font-size:11px;color:var(--text3)}
+
+.t{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:600;letter-spacing:.2px}
+.t-reply{background:var(--crimson-soft);color:var(--crimson)}
+.t-fyi{background:var(--emerald-soft);color:var(--emerald)}
+.t-vip{background:var(--cider-soft);color:var(--cider)}
+.t-new{background:var(--azure-soft);color:var(--azure)}
+.t-read{background:var(--surface-hover);color:var(--text4)}
+.t-hi{background:var(--crimson-soft);color:var(--crimson)}
+.t-med{background:var(--cider-soft);color:var(--cider)}
+.t-lo{background:var(--emerald-soft);color:var(--emerald)}
+.t-p0{background:var(--crimson-soft);color:var(--crimson)}
+.t-p1{background:hsla(25,100%,95%,1);color:hsla(25,90%,45%,1)}
+.t-ok{background:var(--emerald-soft);color:var(--emerald)}
+.t-impl{background:var(--orchid-soft);color:var(--orchid)}
+.t-muted{background:var(--surface-hover);color:var(--text4)}
+.t-cxo{background:var(--orchid-soft);color:var(--orchid)}
+.t-ai{background:var(--sapphire-soft);color:var(--sapphire)}
+.t-ext{background:hsla(340,80%,96%,1);color:hsla(340,70%,40%,1)}
+.t-int{background:var(--azure-soft);color:var(--azure)}
+.t-action{background:var(--cider-soft);color:var(--cider)}
+.t-comp{background:hsla(280,80%,96%,1);color:hsla(280,70%,40%,1)}
+.t-paytm{background:hsla(210,90%,96%,1);color:hsla(210,80%,35%,1)}
+.t-phonepe{background:hsla(270,80%,96%,1);color:hsla(270,70%,40%,1)}
+.t-pine{background:hsla(140,70%,94%,1);color:hsla(140,60%,30%,1)}
+
+.from{font-weight:600;font-size:13px;color:var(--text)}
+.src{font-size:11px;color:var(--text3)}
+.deep-link{font-size:11px;color:var(--azure);text-decoration:none;font-weight:500;opacity:.7;transition:opacity .15s}
+.deep-link:hover{opacity:1;text-decoration:underline}
+
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp3);padding:var(--sp4) var(--sp5)}
+.metric{text-align:center;background:var(--bg);border-radius:var(--r-sm);padding:var(--sp4) var(--sp3);border:1px solid var(--border-subtle)}
+.metric-val{font-size:18px;font-weight:700}
+.metric-label{font-size:9px;color:var(--text4);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.metric-delta{font-size:10px;margin-top:1px}
+.kv{display:flex;justify-content:space-between;padding:6px var(--sp5);font-size:12px;border-bottom:1px solid var(--border-subtle)}
+.kv:last-child{border-bottom:none}
+.kv-v{font-weight:600}
+
+.cal-item{padding:var(--sp3) var(--sp5);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;gap:var(--sp4);font-size:13px}
+.cal-item:last-child{border-bottom:none}
+.cal-time{font-weight:600;color:var(--azure);font-size:12px;min-width:64px;font-variant-numeric:tabular-nums}
+.cal-title{flex:1;color:var(--text)}
+.cal-badge{font-size:10px;padding:2px 8px;border-radius:var(--r-pill);font-weight:500}
+
+.bars{display:flex;gap:3px;align-items:flex-end;height:52px;padding:0 var(--sp5)}
+.bar{flex:1;border-radius:4px 4px 0 0;transition:height .3s}
+.bar-label{font-size:8px;color:var(--text4);text-align:center;padding-top:2px}
+
+.article{padding:var(--sp5);border-bottom:1px solid var(--border-subtle);cursor:pointer;transition:background .12s}
+.article:last-child{border-bottom:none}
+.article:hover{background:var(--surface-hover)}
+.article-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:var(--sp1)}
+.article-body{font-size:12px;color:var(--text2);line-height:1.45}
+.article-footer{display:flex;align-items:center;gap:var(--sp3);margin-top:var(--sp2);font-size:11px;color:var(--text3)}
+.article-link{color:var(--azure);text-decoration:none;font-weight:500}
+.article-link:hover{text-decoration:underline}
+
+.subsection{padding:var(--sp3) var(--sp5) 6px;font-size:11px;font-weight:600;color:var(--text4);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border-subtle);background:var(--bg)}
+
+.bulletin-item{padding:var(--sp3) var(--sp5);border-bottom:1px solid var(--border-subtle);transition:all .2s;border-left:3px solid transparent}
+.bulletin-item:last-child{border-bottom:none}
+.bulletin-item.active{background:var(--azure-soft);border-left-color:var(--azure)}
+.bulletin-head{font-size:13px;font-weight:500;color:var(--text)}
+.bulletin-src{font-size:11px;color:var(--text3);margin-top:1px}
+
+.action-item{padding:var(--sp4) var(--sp5);border-bottom:1px solid var(--border-subtle);display:flex;gap:var(--sp4)}
+.action-item:last-child{border-bottom:none}
+.action-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.action-content{flex:1}
+.action-title{font-size:13px;font-weight:500;color:var(--text)}
+.action-source{font-size:11px;color:var(--text3);margin-top:2px}
+
+.research-item{padding:var(--sp4) var(--sp5);border-bottom:1px solid var(--border-subtle);transition:background .12s}
+.research-item:last-child{border-bottom:none}
+.research-item:hover{background:var(--surface-hover)}
+.research-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.4}
+.research-body{font-size:12px;color:var(--text2);margin-top:var(--sp1);line-height:1.45}
+.research-meta{display:flex;gap:var(--sp3);margin-top:var(--sp2);font-size:11px;color:var(--text3);flex-wrap:wrap;align-items:center}
+.research-link{color:var(--azure);text-decoration:none;font-weight:500;font-size:11px}
+.research-link:hover{text-decoration:underline}
+.research-date{font-size:10px;color:var(--text4)}
+
+.chat-hdr{padding:var(--sp5) var(--sp6);font-weight:600;font-size:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg)}
+.chat-close{cursor:pointer;font-size:20px;color:var(--text3);transition:color .15s;background:none;border:none;font-family:var(--font)}
+.chat-close:hover{color:var(--text)}
+.chat-body{flex:1;overflow-y:auto;padding:var(--sp5) var(--sp6)}
+.chat-msg{margin-bottom:var(--sp4)}
+.chat-ai{background:var(--bg);border-radius:var(--r-md) var(--r-md) var(--r-md) var(--r-xs);padding:var(--sp4) var(--sp5);font-size:13px;line-height:1.6;color:var(--text2);border:1px solid var(--border-subtle)}
+.chat-user{background:var(--azure);color:#fff;border-radius:var(--r-md) var(--r-md) var(--r-xs) var(--r-md);padding:var(--sp4) var(--sp5);font-size:13px;line-height:1.5;margin-left:80px}
+.chat-input{border-top:1px solid var(--border);padding:var(--sp4) var(--sp6);display:flex;gap:var(--sp3);background:var(--surface)}
+.chat-input input{flex:1;border:1px solid var(--border);border-radius:var(--r-sm);padding:10px var(--sp4);font-size:13px;font-family:var(--font);outline:none;transition:border .15s;background:var(--bg)}
+.chat-input input:focus{border-color:var(--azure);background:var(--surface)}
+.chat-input button{background:var(--azure);color:#fff;border:none;border-radius:var(--r-sm);padding:10px var(--sp6);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
+.chat-input button:hover{background:var(--azure-hover)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:var(--sp4)}
+.chip{padding:6px var(--sp4);border-radius:var(--r-pill);font-size:11px;background:var(--surface);color:var(--text2);border:1px solid var(--border);cursor:pointer;transition:all .15s;font-weight:500}
+.chip:hover{background:var(--azure-soft);color:var(--azure);border-color:var(--azure)}
+
+@media(max-width:900px){.g2,.g3,.g23{grid-template-columns:1fr}.stats{flex-wrap:wrap}.stats .stat{min-width:calc(50% - 6px)}}
+  </style>
+</head>
+<body>
+<div class="app">
+<div class="main sidebar-open" id="main-area">
+
+  <div class="topnav">
+    <div class="topnav-inner">
+      <div class="logo">Naman's <span>Briefing</span></div>
+      <div class="nav-tabs">
+        <div class="nav-tab active" onclick="switchTab('work')">My Work <span class="nav-badge" id="work-dot"></span></div>
+        <div class="nav-tab" onclick="switchTab('actions')">Action Items</div>
+        <div class="nav-tab" onclick="switchTab('research')">Research</div>
+        <div class="nav-tab" onclick="switchTab('ai')">AI & News</div>
+      </div>
+      <div class="nav-right">
+        <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()" title="Refresh data from Slack, Gmail & Calendar">
+          <span class="refresh-icon">&#x21bb;</span> Refresh
+        </button>
+        <div class="live-dot"></div>
+        <span class="nav-ts" id="clock"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="filter-bar" id="filter-bar">
+      <span class="filter-label">View:</span>
+      <div class="filter-chip" onclick="setFilter('daily',this)">Daily</div>
+      <div class="filter-chip active" onclick="setFilter('weekly',this)">Weekly</div>
+      <div class="filter-chip" onclick="setFilter('monthly',this)">Monthly</div>
+      <div class="filter-chip" onclick="setFilter('quarterly',this)">Quarterly</div>
+      <div class="filter-chip" onclick="setFilter('custom',this)">Custom</div>
+      <input type="date" class="filter-date" id="filter-from" style="display:none" onchange="applyCustomFilter()">
+      <span id="filter-sep" style="display:none;font-size:11px;color:var(--text4)">to</span>
+      <input type="date" class="filter-date" id="filter-to" style="display:none" onchange="applyCustomFilter()">
+      <span class="filter-range-label" id="filter-range-label"></span>
+    </div>
+
+    <div class="tab-content active" id="tab-work">
+      <div class="stats" id="stats"></div>
+      <div class="grid g2" style="margin-bottom:var(--sp5)">
+        <div class="card"><div class="card-hdr">Slack <span class="card-hdr-sub" id="slack-sub"></span></div><div class="card-body" id="slack-list"></div></div>
+        <div class="card"><div class="card-hdr">Email <span class="card-hdr-sub" id="email-sub"></span></div><div class="card-body" id="email-list"></div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:var(--sp5)">
+        <div class="card"><div class="card-hdr"><span id="pod-hdr">Pod Health</span></div><div class="card-body" id="pod-list" style="max-height:480px"></div></div>
+        <div class="card"><div class="card-hdr">QR Infra Metrics</div><div id="metrics-panel"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Calendar <span class="card-hdr-sub" id="cal-sub"></span></div>
+        <div style="display:grid;grid-template-columns:1fr 2fr">
+          <div><div class="subsection">Today</div><div id="cal-today"></div><div class="subsection">Pending</div><div id="cal-pending"></div></div>
+          <div><div class="subsection">Tomorrow</div><div id="cal-tomorrow"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-actions">
+      <div class="section">
+        <div class="section-title">Action Items from Meetings</div>
+        <div class="grid g2">
+          <div class="card"><div class="card-hdr">Today's Actions <span class="card-hdr-sub">From calendar invites</span></div><div class="card-body" id="actions-today" style="max-height:500px"></div></div>
+          <div class="card"><div class="card-hdr">Tomorrow's Prep <span class="card-hdr-sub">Upcoming meeting prep</span></div><div class="card-body" id="actions-tomorrow" style="max-height:500px"></div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Pending from Slack Threads</div>
+        <div class="card"><div class="card-hdr">Open Action Items <span class="card-hdr-sub">Tagged or mentioned</span></div><div class="card-body" id="actions-slack" style="max-height:400px"></div></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-research">
+      <div class="section">
+        <div class="section-title">Competitive Intelligence — Payment Processing Infra</div>
+        <div id="research-stats" style="display:flex;gap:var(--sp4);margin-bottom:var(--sp5)"></div>
+        <div class="grid g2">
+          <div class="card"><div class="card-hdr">Paytm <span class="card-hdr-sub" id="comp-paytm-sub">Devices, Soundbox, Lifecycle</span></div><div class="card-body" id="comp-paytm" style="max-height:560px"></div></div>
+          <div class="card"><div class="card-hdr">PhonePe <span class="card-hdr-sub" id="comp-phonepe-sub">SmartPOD, PG, Merchants</span></div><div class="card-body" id="comp-phonepe" style="max-height:560px"></div></div>
+        </div>
+        <div class="grid g2" style="margin-top:var(--sp5)">
+          <div class="card"><div class="card-hdr">Pine Labs <span class="card-hdr-sub" id="comp-pine-sub">AI, IPO, SaaS Pivot</span></div><div class="card-body" id="comp-pine" style="max-height:560px"></div></div>
+          <div class="card"><div class="card-hdr">Mosambee, Juspay & Others <span class="card-hdr-sub" id="comp-others-sub">SoftPOS, Orchestration</span></div><div class="card-body" id="comp-others" style="max-height:560px"></div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Merchant Feedback & Competition Intel — Internal Slack</div>
+        <div class="card"><div class="card-hdr">From #pos-competition-intel, #pos-customer-conversations <span class="card-hdr-sub" id="feedback-sub">Payment Processing</span></div><div class="card-body" id="merchant-feedback" style="max-height:560px"></div></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-ai">
+      <div class="section">
+        <div class="section-title">External — Startup & AI Industry</div>
+        <div class="grid g23">
+          <div class="card"><div class="card-hdr">Startup News <span class="card-hdr-sub">#bot-startup-news</span></div><div class="card-body" id="news-list" style="max-height:540px"></div></div>
+          <div class="card"><div class="card-hdr">AI Industry Pulse <span class="card-hdr-sub" id="ai-ts"></span></div><div class="card-body" id="ai-ext-bulletin" style="max-height:540px"></div></div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-title">Internal — Razorpay AI Activity</div>
+        <div class="grid g2">
+          <div class="card"><div class="card-hdr">CXO AI Signals <span class="card-hdr-sub">Shashank · Harshil · Khilan</span></div><div class="card-body" id="cxo-list" style="max-height:480px"></div></div>
+          <div class="card"><div class="card-hdr">AI Across Teams <span class="card-hdr-sub">Channels & Initiatives</span></div><div class="card-body" id="ai-int-list" style="max-height:480px"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="kb-hint" id="kb-hint">
+  <span><span class="kb-key">J</span>/<span class="kb-key">K</span> Navigate</span>
+  <span><span class="kb-key">O</span> Open</span>
+  <span><span class="kb-key">E</span> Mark Read</span>
+  <span><span class="kb-key">1</span>-<span class="kb-key">4</span> Tabs</span>
+  <span><span class="kb-key">/</span> Search</span>
+  <span><span class="kb-key">Esc</span> Exit</span>
+  <span><span class="kb-key">?</span> Help</span>
+</div>
+
+<button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle assistant">&#x276F;</button>
+
+<div class="sidebar open" id="sidebar">
+  <div class="chat-hdr">
+    <span>Ask about your data</span>
+    <button class="chat-close" onclick="toggleSidebar()">&times;</button>
+  </div>
+  <div class="chat-body" id="chat-body">
+    <div class="chat-msg"><div class="chat-ai">
+      <strong>Good morning, Naman.</strong><br><br>
+      What needs your attention now:<br><br>
+      <strong style="color:var(--cider)">1. Nidhi Sachdev</strong> wants to connect at 2:30 PM today.<br><br>
+      <strong style="color:var(--cider)">2. Manisha Naik</strong> has action item on Kotak Juspay Go/No-Go approval.<br><br>
+      <strong style="color:var(--crimson)">3. UPI Incorrect Callback Routing</strong> — Report on migrated merchants impact.<br><br>
+      <strong>4. Focus Hours</strong> — 2:00 PM to 6:00 PM org-wide. 1:1 with Pravir at 3:30 PM.
+    </div></div>
+    <div class="chips" id="chips">
+      <div class="chip" onclick="askQ('QR NTF incident')">QR NTF incident</div>
+      <div class="chip" onclick="askQ('What does Aman need?')">Aman's asks</div>
+      <div class="chip" onclick="askQ('SR trend')">SR trend</div>
+      <div class="chip" onclick="askQ('Priority emails')">Priority emails</div>
+      <div class="chip" onclick="askQ('Tomorrow prep')">Tomorrow prep</div>
+      <div class="chip" onclick="askQ('Action items')">Action items</div>
+      <div class="chip" onclick="askQ('Competitor intel')">Competitor intel</div>
+    </div>
+  </div>
+  <div class="chat-input">
+    <input type="text" id="chat-in" placeholder="Ask anything..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button onclick="sendChat()">Send</button>
+  </div>
+</div>
+</div>
+
+<script>
+// D and ACTIONS are loaded from Firestore — populated by initFirebase() below
+let D=null;
+let ACTIONS=null;
+let _D_STATIC={
+  slack:[
+    {id:'s1',from:'Bilal Ashraf',ch:'#amazon-pay',subj:'AmazonPay QR 600s cap — capped at 10 min, not 600s',body:'Tried prod test merchant qr_SSbmYB7Dz27M49 with close_by set to 23:36 but got capped to 13:16 — only 10 min after created_at. 600s cap not working as expected.',time:'2:06 PM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C09HTR65PM3/p1773820770060300'},
+    {id:'s2',from:'Bilal Ashraf',ch:'#amazon-pay',subj:'Amazon Pay Balance/Later/CC recon rules — what other instruments?',body:'Updated recon rules to skip AmazonPay Balance, Later, and Credit Card. Naman — can you confirm what other payment instruments we should expect? I\'ll need to add them individually to the rule.',time:'11:39 AM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C09HTR65PM3/p1773811903020600'},
+    {id:'s3',from:'Ashutosh Ravi',ch:'#payments_upi_offline_qr',subj:'QR Mapper UAT call at 4 PM — should we reschedule?',body:'You have a session planned at 4. Should we reschedule our call with the bank? Aman — please let me know if we can move ahead without Naman.',time:'12:08 PM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C04RWGXQN17/p1773812099120800'},
+    {id:'s4',from:'Shine S Nath',ch:'#rca-tracker',subj:'RCA not aligned with Razorpay internal template — needs update',body:'Hi Naman — the RCA you shared is not aligned with Razorpay\'s internal RCA template. Kindly update the same.',time:'11:53 AM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C03AWKPPA4W/p1773811929050000'},
+    {id:'s5',from:'Aman Patel',ch:'DM with Aman',subj:'@mention from Aman — action needed',body:'Direct message from Aman Patel — see full thread for context.',time:'9:27 AM',date:'2026-03-18',vip:true,read:false,link:'https://razorpay.enterprise.slack.com/archives/D0AL5BSQ76J/p1773812138090000'},
+    {id:'s6',from:'Sumit .',ch:'#office',subj:'AI Show & Tell — PM Productivity Dashboard — TODAY 4 PM',body:'AI Show & Tell: PM Productivity Dashboard — Speaker: Naman Goyal. Date & Time: Today 4:00 PM. A unified PM briefing dashboard that pulls Slack, Gmail, Calendar, and DevRev into a single view.',time:'12:25 PM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C02CEGJTG/p1773811999050000'},
+    {id:'s7',from:'Shibi Madhusoodanan',ch:'DM with Shibi',subj:'Ask POS skill — connect with Charan on metrics next week',body:'Creating Ask POS skill. Charan is on leave this week — will connect with you next week to get context on metrics dictionary.',time:'11:05 AM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/D07115830N/p1773807095070000'},
+    {id:'s8',from:'Mukesh Kumawat',ch:'Group DM (Aman, Mukesh, Sagar, Rohan)',subj:'Latest update shared in thread',body:'Latest update is shared in the thread — see link in #amazon-pay',time:'8:27 AM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C09HTR65PM3/p1773651376698179'},
+    {id:'s9',from:'Ashutosh Ravi',ch:'#payments_upi_offline_qr',subj:'QR Mapper E2E UAT call with Axis Bank — 4 PM today',body:'PFB the meeting invite for QR Mapper E2E UAT call with the mapper team from Axis Bank. Meeting time: 4PM today.',time:'11:05 AM',date:'2026-03-18',vip:false,read:false,link:'https://razorpay.enterprise.slack.com/archives/C04RWGXQN17/p1773812042110000'},
+    {id:'s10',from:'Pravir Shanker',ch:'DM with Pravir',subj:'okay.',body:'okay.',time:'11:10 AM',date:'2026-03-18',vip:true,read:false,link:'https://razorpay.enterprise.slack.com/archives/D0AL5BSQ76J/p1773807248110000'}
+  ],
+  email:[
+    {id:'e1',from:'Saurabh Banerjee',subj:'Re: Bikanervala | Amazon Pay - Integration',snip:'Could you confirm the go-live timeline for Amazon Pay on the direct model?',time:'12:04 PM',date:'2026-03-18',p:'high',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffa7ae7b95791'},
+    {id:'e2',from:'Praneta Shukla',subj:'Re: Bikanervala | Amazon Pay - Integration',snip:'Please initiate a track with Mrinal, Suken and Pravir to take this to closure — as discussed in yesterday\'s meeting',time:'12:10 PM',date:'2026-03-18',p:'high',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffad36db21a03'},
+    {id:'e3',from:'Ashutosh Ravi',subj:'Re: QR MAPPER | Razorpay',snip:'Please whitelist the IPs listed: 52.66.151.218, 52.66.75.174, 52.66.76.63, 35.154.22.73...',time:'11:57 AM',date:'2026-03-18',p:'high',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffa102fcd6086'},
+    {id:'e4',from:'Mohak Varshneya',subj:'Re: Amazon Fresh Order redirection Technical Discussion <> Razorpay',snip:'Amazon team will coordinate internally and provide a confirmed date for the next steps',time:'2:13 PM',date:'2026-03-18',p:'medium',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19d001db96442f4e'},
+    {id:'e5',from:'Gaurav Mishra',subj:'Invitation: POS AI Day Demo - UPI Projects @ 4:30 PM today',snip:'You have been invited to POS AI Day Demo - UPI Projects — Wed Mar 18, 4:30–5 PM IST',time:'2:10 PM',date:'2026-03-18',p:'medium',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19d00190edf142f7'},
+    {id:'e6',from:'Ashutosh Ravi',subj:'Invitation: Razorpay UAT Testing @ 4 PM today',snip:'UAT Testing for QR Mapper with Axis Bank — Wed Mar 18, 4–5:30 PM IST. Needs RSVP.',time:'7:21 AM',date:'2026-03-18',p:'medium',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffd1e76c63023'},
+    {id:'e7',from:'People Ops Communication',subj:'Peer Feedback Form (H1 2025-2026) for Naman Goyal Completed',snip:'Congratulations! Peer Feedback Form for Naman Goyal is completed. View final results.',time:'6:50 AM',date:'2026-03-18',p:'medium',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffb5a8f8212f6'},
+    {id:'e8',from:'Pravir Shanker (via Google Calendar)',subj:'Invitation: Shravani\'s farewell @ 4:15 PM today',snip:'Shravani\'s farewell — Wed Mar 18, 4:15–4:45 PM. Organised by Pravir Shanker.',time:'6:28 AM',date:'2026-03-18',p:'low',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffa143170ee55'},
+    {id:'e9',from:'Shine S Nath (DevRev)',subj:'Update on ISS — RCA Document — UPI QR payments NTF',snip:'ISS-1607747 RCA Document update — UPI QR payments are failing with NTF',time:'6:28 AM',date:'2026-03-18',p:'high',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cffa17c726da4a'},
+    {id:'e10',from:'Tableau',subj:'Executive Summary — QR Infra Monitoring Dashboard',snip:'QR Infra Monitoring Dashboard subscription — PDF attached, live view available',time:'7:55 AM',date:'2026-03-18',p:'low',read:false,link:'https://mail.google.com/mail/u/0/#inbox/19cfff18844d71f6'}
+  ],
+  cal:{
+    pending:[
+      {time:'12:00 PM',title:'Omni Weekly Syncup',link:'https://www.google.com/calendar/event?eid=omni-weekly',type:'meeting'},
+      {time:'4:00 PM',title:'Razorpay UAT Testing (Axis Bank QR Mapper)',link:'https://www.google.com/calendar/event?eid=razorpay-uat',type:'meeting'},
+      {time:'4:15 PM',title:'Shravani\'s farewell',link:'https://www.google.com/calendar/event?eid=shravani-farewell',type:'meeting'},
+      {time:'4:30 PM',title:'POS AI Day Demo - UPI Projects',link:'https://www.google.com/calendar/event?eid=pos-ai-day-demo',type:'meeting'}
+    ],
+    today:[
+      {time:'11:00 AM',title:'QR Infra - Standup',link:'https://www.google.com/calendar/event?eid=NzRoODE2aHY5OGJ0YW9kYXZlMm01OGppdG5fMjAyNjAzMThUMDUzMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'standup'},
+      {time:'11:30 AM',title:'CP Infra - Standup',link:'https://www.google.com/calendar/event?eid=MHJhYnMydWQ4Zjd0bzdobjI5dmRmY2Q4dnVfMjAyNjAzMThUMDYwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'standup'},
+      {time:'11:30 AM',title:'Kotak Juspay Checkin',link:'https://www.google.com/calendar/event?eid=N2ZjZzVqZnNobmlsZWdzdjBwMmhxZm5rY2ZfMjAyNjAzMThUMDYwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'12:00 PM',title:'Omni Weekly Syncup ⚠️ RSVP needed',link:'https://www.google.com/calendar/event?eid=omni-weekly',type:'meeting'},
+      {time:'1:00 PM',title:'Lunch',link:'',type:'focus'},
+      {time:'2:30 PM',title:'Omni SOS - Call - Internal',link:'https://www.google.com/calendar/event?eid=czM5a2o0cmk3dDUxb2ptOG1lcmYwdmppbnNfMjAyNjAzMThUMDkwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'3:30 PM',title:'[Critical] QR + Offline Payments Rearch Cadence',link:'https://www.google.com/calendar/event?eid=dHQza2xtZGhnMTM0cDBsNnYxM3VqZTQxajFfMjAyNjAzMThUMTAwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'4:00 PM',title:'AI Show and Tell 2.0: PM Productivity Dashboard 🎤',link:'https://www.google.com/calendar/event?eid=ai-show-tell',type:'meeting'},
+      {time:'4:00 PM',title:'Razorpay UAT Testing ⚠️ RSVP needed',link:'https://www.google.com/calendar/event?eid=razorpay-uat',type:'meeting'},
+      {time:'4:15 PM',title:'Shravani\'s farewell ⚠️ RSVP needed',link:'https://www.google.com/calendar/event?eid=shravani-farewell',type:'meeting'},
+      {time:'4:30 PM',title:'POS AI Day Demo - UPI Projects ⚠️ RSVP needed',link:'https://www.google.com/calendar/event?eid=pos-ai-day-demo',type:'meeting'},
+      {time:'4:30 PM',title:'[Imp.] Weekly check-in: QR infra',link:'https://www.google.com/calendar/event?eid=MG9kNWptOTdjZTNzaWswc29udWFicXBjc2tfMjAyNjAzMThUMTIwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'7:00 PM',title:'Out of office',link:'',type:'focus'}
+    ],
+    tomorrow:[
+      {time:'10:30 AM',title:'VAS Training: Pre Auth, Brand EMI, Bank EMI',link:'https://www.google.com/calendar/event?eid=NXRwdjY4cGxwMG4xY2ViOWZ0bGlxMDNsYWogbmFtYW4uZ295YWxAcmF6b3JwYXkuY29t&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'10:30 AM',title:'QR Infra - Sprint Planning',link:'https://www.google.com/calendar/event?eid=dWx1a2JhdTVvajJ2bjE5bDA5M21rZTZjNm1fMjAyNjAzMTlUMDUwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'11:00 AM',title:'QR Infra - Standup',link:'https://www.google.com/calendar/event?eid=NzRoODE2aHY5OGJ0YW9kYXZlMm01OGppdG5fMjAyNjAzMTlUMDUzMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'standup'},
+      {time:'11:30 AM',title:'CP Infra - Standup',link:'https://www.google.com/calendar/event?eid=MHJhYnMydWQ4Zjd0bzdobjI5dmRmY2Q4dnVfMjAyNjAzMTlUMDYwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'standup'},
+      {time:'2:00 PM',title:'DevRev Ways of Working | 2',link:'https://www.google.com/calendar/event?eid=NWw2c2JrMGQxZ2dwMXYxdm9qNDNzbDZlcnEgbmFtYW4uZ295YWxAcmF6b3JwYXkuY29t&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'2:00 PM',title:'Juspay Kotak - RazorPay integration',link:'',type:'meeting'},
+      {time:'3:30 PM',title:'[Critical] QR + Offline Payments Rearch Cadence W/Rizwan',link:'https://www.google.com/calendar/event?eid=NnQxdnYxb2s4dDZyb3JwZmg2cHRpanJnOGtfMjAyNjAzMTlUMTAwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'},
+      {time:'5:30 PM',title:'[Imp.] Weekly check-in doc update | Pls don\'t skip',link:'https://www.google.com/calendar/event?eid=MG9kNWptOTdjZTNzaWswc29udWFicXBjc2tfMjAyNjAzMTlUMTIwMDAwWiBuYW1hbi5nb3lhbEByYXpvcnBheS5jb20&ctz=Asia/Kolkata',type:'meeting'}
+    ]
+  },
+  pod:{
+    incidents:[
+      {id:'inc1',title:'UPI QR NTF — Online terminal rule causing POS failures',severity:'P0',status:'Investigating',time:'Today',owner:'Naman Goyal / Kanishk Mehta',link:'https://razorpay.slack.com/archives/C02B75CA8V9/p1771944028588209'},
+      {id:'inc2',title:'DS filter rule — 3rd P0 in 2 weeks',severity:'P0',status:'Mitigation applied',time:'Saturday',owner:'Aman Patel',link:'https://razorpay.slack.com/archives/C01LVNRNP7F/p1770751745243899'}
+    ],
+    resolved:[
+      {id:'res1',title:'Saturday NTF fix — global rule for Online Terminals UPI',time:'2026-03-08',owner:'Naman Goyal'}
+    ],
+    issues:[
+      {id:'iss1',title:'ISS-1583146 RCA Document — Merchant SR drop (SLA breach tomorrow)',priority:'P0',status:'open',owner:'Naman Goyal',link:'https://docs.google.com/document/d/1rjbl33qa1g2KT7oXH2DrmZXm-XD7kKrso0l86jfRrPQ/edit'},
+      {id:'iss2',title:'UPI Incorrect Callback Routing For Migrated Merchants',priority:'P1',status:'open',owner:'Naman Goyal',link:''},
+      {id:'iss3',title:'ISS-1577038 POS UPI auto refund when not enabled',priority:'P1',status:'open',owner:'Naman Goyal',link:''}
+    ],
+    enhancements:[],
+    offline:[],
+    deploys:[]
+  },
+  metrics:{
+    qr_sr:99.2,
+    pos_sr:98.8,
+    qr_vol:'1.2M',
+    pos_vol:'450K'
+  }
+};
+
+const _ACTIONS_STATIC={
+  today:[
+    {text:'Reply to Bilal (#amazon-pay) — confirm which AmazonPay instruments to add to recon rules (Balance, Later, CC listed — what else?)',priority:'high',type:'slack'},
+    {text:'Update RCA per Shine S Nath — not aligned with internal Razorpay template (ISS-1607747)',priority:'high',type:'slack'},
+    {text:'RSVP: Omni Weekly Syncup 12 PM, UAT Testing 4 PM, Shravani farewell 4:15 PM, POS AI Day Demo 4:30 PM',priority:'high',type:'calendar'},
+    {text:'Prep for AI Show & Tell 2.0 at 4 PM — PM Productivity Dashboard demo',priority:'high',type:'calendar'},
+    {text:'Decide on QR Mapper UAT call — reschedule or proceed without you per Ashutosh\'s ask',priority:'medium',type:'slack'},
+    {text:'Reply to Saurabh / Praneta — Bikanervala | Amazon Pay go-live timeline and closure track with Mrinal/Suken/Pravir',priority:'medium',type:'email'},
+    {text:'Prep for [Critical] QR + Offline Payments Rearch Cadence at 3:30 PM',priority:'high',type:'calendar'},
+    {text:'Confirm Peer Feedback Form (H1 2025-26) completed — view results',priority:'low',type:'email'}
+  ],
+  tomorrow:[
+    {text:'VAS Training: Pre Auth, Brand EMI at 10:30 AM',priority:'medium',type:'calendar'},
+    {text:'QR Infra Sprint Planning at 10:30 AM',priority:'medium',type:'calendar'},
+    {text:'DevRev Ways of Working session at 2 PM',priority:'medium',type:'calendar'},
+    {text:'[Critical] QR + Offline Payments Rearch Cadence W/Rizwan at 3:30 PM',priority:'high',type:'calendar'},
+    {text:'[Imp.] Weekly check-in doc update — don\'t skip at 5:30 PM',priority:'medium',type:'calendar'},
+    {text:'Connect Shibi with Charan on Ask POS skill metrics when back from leave',priority:'low',type:'slack'}
+  ],
+  slack:[
+    {text:'Reply to Bilal — AmazonPay recon instrument list (what else beyond Balance/Later/CC)',priority:'high',type:'slack'},
+    {text:'Update RCA doc — align with internal Razorpay template per Shine S Nath',priority:'high',type:'slack'},
+    {text:'Respond to Ashutosh on QR Mapper UAT call timing conflict',priority:'medium',type:'slack'},
+    {text:'Check Aman\'s DM — @mention with action needed',priority:'high',type:'slack'}
+  ]
+};
+
+const NEWS=[
+  {src:'Inc42',title:'India PG Market to Hit $4B by 2031',body:'Payment gateway market growing at 8.6% CAGR. UPI driving digital payment adoption across merchant segments.',time:'2026-02-24T10:00:00+05:30',link:'https://inc42.com'},
+  {src:'YourStory',title:'Juspay Raises $100M for Payment Orchestration',body:'Juspay raises fresh funding to expand Hyperswitch platform. Plans to challenge Razorpay in enterprise payments.',time:'2026-02-22T09:00:00+05:30',link:'https://yourstory.com'},
+  {src:'TechCrunch',title:'PhonePe IPO Timeline: H2 2026',body:'PhonePe targeting H2 2026 for IPO at $12B valuation. Merchant services and lending to drive growth narrative.',time:'2026-02-21T08:00:00+05:30',link:'https://techcrunch.com'},
+  {src:'Medianama',title:'Pine Labs Patent: Tap-to-Pay-Online Innovation',body:'Pine Labs patents technology bridging online and offline payments through NFC tap on POS terminals.',time:'2026-02-19T11:00:00+05:30',link:'https://medianama.com'},
+  {src:'ET Tech',title:'UPI Hits 16 Billion Monthly Transactions',body:'UPI transaction volume reaches new record. RBI considering tiered MDR for high-value UPI payments.',time:'2026-02-18T10:00:00+05:30',link:'https://economictimes.indiatimes.com'}
+];
+
+const CXO_AI=[
+  {who:'Shashank Kumar',role:'CTO, Razorpay',text:'AI-driven fraud detection reducing false positives by 34% across payment channels. Next: GenAI for merchant support automation.',time:'2026-02-24',link:''},
+  {who:'Harshil Mathur',role:'CEO, Razorpay',text:'Exploring AI copilots for merchant onboarding. Target: 50% reduction in activation time by Q3.',time:'2026-02-22',link:''},
+  {who:'Khilan Haria',role:'VP Product',text:'AI-powered smart routing improving payment success rates by 2.1% on aggregate. Expanding to offline payments.',time:'2026-02-20',link:''}
+];
+
+const AI_EXTERNAL=[
+  {title:'OpenAI o3 Model Released — Multi-Modal Reasoning',body:'OpenAI releases o3 with advanced multi-modal reasoning. Enterprise API pricing announced.',src:'OpenAI',time:'2026-02-23T09:00:00+05:30',link:'https://openai.com'},
+  {title:'Anthropic Claude 4 — Enterprise Features',body:'Claude 4 with tool use, computer use, and enterprise security. Competing directly with GPT-4 in fintech applications.',src:'Anthropic',time:'2026-02-21T10:00:00+05:30',link:'https://anthropic.com'},
+  {title:'Google Gemini 2.0 for Financial Services',body:'Google launches Gemini 2.0 with financial services APIs. Pre-trained on financial data for banking and payments.',src:'Google',time:'2026-02-19T11:00:00+05:30',link:'https://blog.google'}
+];
+
+const AI_INTERNAL=[
+  {title:'AI Fraud Detection v3 — Live in Production',body:'New AI fraud detection model live across all payment channels. 34% reduction in false positives, 12% improvement in catch rate.',team:'Risk & Compliance',time:'2026-02-24T10:00:00+05:30',link:''},
+  {title:'Merchant Support AI Copilot — Beta Launch',body:'AI copilot for merchant support team launched in beta. Handles tier-1 queries with 78% accuracy.',team:'Support Engineering',time:'2026-02-22T10:00:00+05:30',link:''},
+  {title:'Smart Routing ML Model — A/B Test Results',body:'ML-based payment routing showing 2.1% SR improvement in A/B test. Ready for full rollout.',team:'Platform Engineering',time:'2026-02-20T10:00:00+05:30',link:''}
+];
+
+const COMPETITORS=[
+  {company:'Paytm',title:'AI Soundbox with Dual Displays & 11-Language Assistant',body:'Launched AI-powered Soundbox (Oct 2025) with dual displays, voice-enabled AI assistant supporting 11 regional languages, real-time transaction display, and merchant analytics.',impact:'high',date:'2025-10-15',tag:'t-paytm',sources:[{label:'Paytm Blog',url:'https://paytm.com/blog'},{label:'Inc42',url:'https://inc42.com/buzz/paytm-ai-soundbox/'}]},
+  {company:'Paytm',title:'NFC Card Soundbox — Integrated QR + Card Tap',body:'New NFC Card Soundbox combines QR code display with NFC card tap capability in a single device, enabling UPI, card, and contactless payments at the same POS.',impact:'high',date:'2025-12-01',tag:'t-paytm',sources:[{label:'Business Standard',url:'https://www.business-standard.com/companies/news/paytm-nfc-soundbox'},{label:'Inc42',url:'https://inc42.com/buzz/paytm-nfc-card-soundbox/'}]},
+  {company:'Paytm',title:'1.17 Crore Soundbox Activations — Market Domination',body:'Paytm crossed 1.17 crore cumulative soundbox activations with 82 lakh total devices deployed. Running audio ads on soundboxes as new monetization channel.',impact:'high',date:'2026-01-15',tag:'t-paytm',sources:[{label:'Paytm Blog',url:'https://paytm.com/blog'},{label:'Business Standard',url:'https://www.business-standard.com/companies/news/paytm-soundbox-activations'}]},
+  {company:'Paytm',title:'MahaKumbh Soundbox with Digital Screen',body:'Launched special edition MahaKumbh Soundbox (early 2025) with digital screen display and 10-day battery life, targeting merchant events and outdoor use cases.',impact:'medium',date:'2025-02-01',tag:'t-paytm',sources:[{label:'Paytm Blog',url:'https://paytm.com/blog'}]},
+  {company:'Paytm',title:'Pocket Soundbox & Music Soundbox — Portable Form Factor',body:'Launched ultra-portable Pocket Soundbox and Music Soundbox with Bluetooth music capability, targeting small merchants who need mobility.',impact:'medium',date:'2025-08-15',tag:'t-paytm',sources:[{label:'Inc42',url:'https://inc42.com/buzz/paytm-pocket-soundbox/'}]},
+  {company:'Paytm',title:'Solar Soundbox for Rural Merchants',body:'Solar-powered Soundbox targeting rural merchants without reliable power supply, extending reach to underserved markets.',impact:'medium',date:'2025-09-01',tag:'t-paytm',sources:[{label:'Paytm Blog',url:'https://paytm.com/blog'}]},
+  {company:'Paytm',title:'Paytm Devices Charter — 200+ Initiatives Roadmap',body:'Internal Paytm Devices Charter reveals 200+ initiatives across hardware, software, and services. Comprehensive roadmap for device ecosystem expansion.',impact:'high',date:'2026-02-10',tag:'t-paytm',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Paytm',title:'Palm Payments — New Biometric Device',body:'Paytm working on palm recognition payment device, potentially disrupting biometric authentication in POS.',impact:'high',date:'2026-02-09',tag:'t-paytm',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Paytm',title:'Remote Battery Diagnostics for Device Fleet',body:'Remote battery diagnostics system for Paytm device fleet, enabling proactive maintenance and reducing field service costs.',impact:'medium',date:'2026-02-08',tag:'t-paytm',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Paytm',title:'PDI Quality Software Intelligence & QC Mode',body:'Software intelligence platform for device quality control, automated testing, and quality assurance in manufacturing.',impact:'medium',date:'2026-02-08',tag:'t-paytm',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Paytm',title:'Service Agent App for Field Operations',body:'Dedicated Service Agent App for field technicians — streamlines device installation, troubleshooting, and maintenance workflows.',impact:'medium',date:'2026-02-02',tag:'t-paytm',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'PhonePe',title:'SmartSpeaker 2.0 — Made in India',body:'Launched Made-in-India SmartSpeaker 2.0 (May 2025) with improved audio, instant payment confirmations, and support for UPI/QR payments.',impact:'high',date:'2025-05-15',tag:'t-phonepe',sources:[{label:'PhonePe Press',url:'https://www.phonepe.com/press'},{label:'Tribune India',url:'https://www.tribuneindia.com/business/phonepe-smartspeaker'}]},
+  {company:'PhonePe',title:'SmartPOD — Hybrid Speaker + POS Device',body:'Unveiled SmartPOD at Global Fintech Fest (Oct 2025), combining SmartSpeaker with POS terminal for UPI + card payments in single device.',impact:'high',date:'2025-10-20',tag:'t-phonepe',sources:[{label:'PhonePe Press',url:'https://www.phonepe.com/press'},{label:'Devdiscourse',url:'https://www.devdiscourse.com/article/technology/phonepe-smartpod'}]},
+  {company:'PhonePe',title:'47.19M Registered Merchants, 24.96B Transactions',body:'PhonePe reached 47.19 million registered merchants with 24.96 billion merchant transactions. Market leader in UPI merchant payments.',impact:'high',date:'2026-01-10',tag:'t-phonepe',sources:[{label:'Angel One Research',url:'https://www.angelone.in/knowledge-center/share-market/phonepe-market-share'}]},
+  {company:'PhonePe',title:'Dynamic QR Codes & Device Tokenization',body:'Rolled out Dynamic QR code generation for merchants and device tokenization for enhanced security in card payments.',impact:'medium',date:'2025-11-01',tag:'t-phonepe',sources:[{label:'PhonePe Press',url:'https://www.phonepe.com/press'}]},
+  {company:'PhonePe',title:'IPO Preparation & $12B Valuation',body:'PhonePe preparing for IPO, valued at $12 billion. Expects to list by 2026, planning major expansion in merchant services and lending.',impact:'medium',date:'2026-01-20',tag:'t-phonepe',sources:[{label:'Angel One',url:'https://www.angelone.in/knowledge-center/share-market/phonepe-ipo'}]},
+  {company:'PhonePe',title:'PG FREE Promo — Zero MDR for Merchants',body:'Aggressive pricing strategy with zero MDR promotion for payment gateway merchants, aimed at acquiring market share from Razorpay.',impact:'high',date:'2025-12-15',tag:'t-phonepe',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Pine Labs',title:'Patented Tap-to-Pay-Online Technology',body:'Pine Labs patented Tap-to-Pay-Online technology (late 2025) that lets consumers tap their card on a merchant terminal to complete online payments, bridging online and offline payments.',impact:'high',date:'2025-12-01',tag:'t-pine',sources:[{label:'Medianama',url:'https://www.medianama.com/2025/12/pine-labs-tap-to-pay-online/'},{label:'IBS Intelligence',url:'https://ibsintelligence.com/ibsi-news/pine-labs-tap-to-pay-online/'}]},
+  {company:'Pine Labs',title:'Pine Labs Mini — QR-First + Card Tap Device (Visa Partnership)',body:'Launched Pine Labs Mini with Visa partnership. QR-first device with card tap capability, compact form factor targeting small merchants.',impact:'high',date:'2025-11-15',tag:'t-pine',sources:[{label:'Inc42',url:'https://inc42.com/buzz/pine-labs-mini-visa/'},{label:'Pine Labs',url:'https://www.pinelabs.com/products'}]},
+  {company:'Pine Labs',title:'AllTap — Smartphone as POS via NFC',body:'AllTap app turns any NFC-enabled Android smartphone into a POS terminal. No additional hardware needed. Direct competitor to Razorpay POS softPOS.',impact:'high',date:'2025-10-01',tag:'t-pine',sources:[{label:'The Fintech Times',url:'https://thefintechtimes.com/pine-labs-alltap/'},{label:'Pine Labs',url:'https://www.pinelabs.com/alltap'}]},
+  {company:'Pine Labs',title:'Credit+ Platform — Next-Gen Credit Issuing',body:'Credit+ platform for credit card and BNPL product issuance through merchant terminals. Enables POS-based lending.',impact:'medium',date:'2025-09-15',tag:'t-pine',sources:[{label:'Pine Labs',url:'https://www.pinelabs.com/credit-plus'}]},
+  {company:'Pine Labs',title:'Pine Labs Support Ecosystem Deep-Dive',body:'Detailed analysis of Pine Labs merchant support ecosystem — ticketing workflows, field service operations, training programs, and SLA tracking. Benchmark for our operations.',impact:'medium',date:'2026-01-29',tag:'t-pine',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Pine Labs',title:'Pine Labs Onboarding Experience Research',body:'Research on Pine Labs merchant onboarding experience — activation time, documentation requirements, and first-transaction journey.',impact:'medium',date:'2026-01-13',tag:'t-pine',sources:[{label:'#pos-competition-intel',url:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}]},
+  {company:'Pine Labs',title:'OpenAI Partnership for Merchant AI',body:'Pine Labs partnered with OpenAI to integrate AI capabilities in merchant services — analytics, inventory insights, and smart recommendations.',impact:'high',date:'2025-11-01',tag:'t-pine',sources:[{label:'Inc42',url:'https://inc42.com/buzz/pine-labs-openai/'}]},
+  {company:'Mosambee',title:'Tap-on-Phone — SoftPOS Payment Solution',body:'Mosambee Tap-on-Phone turns Android smartphones into contactless payment terminals. Supports card payments without additional hardware.',impact:'medium',date:'2025-10-01',tag:'t-comp',sources:[{label:'Google Play',url:'https://play.google.com/store/apps/details?id=com.mosambee.taponphone'},{label:'Mosambee',url:'https://www.mosambee.com'}]},
+  {company:'Mosambee',title:'QPOS Mini ATM — EMV-Enabled',body:'QPOS Mini ATM device supporting EMV chip and PIN transactions, cash withdrawal at merchant locations, and UPI payments.',impact:'medium',date:'2025-08-15',tag:'t-comp',sources:[{label:'Hardwiz Solutions',url:'https://hardwizsolutions.com/mosambee/'}]},
+  {company:'Mosambee',title:'UPI & QR + Pay-by-Link Payment Stack',body:'Full payment stack including UPI QR code generation, static/dynamic QR, and Pay-by-Link for remote payments — competing in small merchant segment.',impact:'medium',date:'2025-11-01',tag:'t-comp',sources:[{label:'Mosambee',url:'https://www.mosambee.com'}]},
+  {company:'Juspay',title:'Hyperswitch — Open-Source Payment Orchestration',body:'Juspay open-sourced Hyperswitch payment orchestration platform with smart routing. HyperUPI claims 90% payment success rate. Direct threat to Razorpay gateway share.',impact:'high',date:'2025-10-15',tag:'t-comp',sources:[{label:'Juspay',url:'https://hyperswitch.io'}]},
+  {company:'BharatPe',title:'BharatPe One — All-in-One Payment Device',body:'BharatPe One combines QR, card swipe, NFC tap, and UPI in a single all-in-one device. Targeting small merchants with bundled lending.',impact:'medium',date:'2025-09-01',tag:'t-comp',sources:[{label:'BharatPe',url:'https://www.bharatpe.com'}]},
+  {company:'Market',title:'India PG Market: $2.31B → $4.01B by 2031',body:'India payment gateway market projected to grow from $2.31 billion to $4.01 billion by 2031. Digital payments infrastructure expanding rapidly.',impact:'medium',date:'2025-12-01',tag:'t-comp',sources:[{label:'Research & Markets',url:'https://www.researchandmarkets.com/reports/india-payment-gateway-market'}]}
+];
+
+const MERCHANT_FEEDBACK=[
+  {title:'Paytm Devices Charter — 200+ Initiatives Identified',body:'Complete roadmap breakdown of Paytm devices charter with 200+ initiatives across hardware, software, lifecycle management. Key insight into competitor device strategy depth.',sentiment:'alert',channel:'#pos-competition-intel',date:'2026-02-10',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Paytm Palm Payments — Biometric Device Development',body:'Paytm exploring palm recognition payments for POS. Could enable passwordless, cardless transactions at retail. Potential game-changer for authentication.',sentiment:'alert',channel:'#pos-competition-intel',date:'2026-02-09',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Paytm Remote Battery Diagnostics System',body:'Paytm building remote battery diagnostics for deployed device fleet. Enables proactive maintenance, reduces field visits, improves device uptime.',sentiment:'mixed',channel:'#pos-competition-intel',date:'2026-02-08',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Paytm Service Agent App — Field Operations Platform',body:'Dedicated app for Paytm service agents covering installation, maintenance, and troubleshooting workflows. Shows investment in post-sale device lifecycle.',sentiment:'mixed',channel:'#pos-competition-intel',date:'2026-02-02',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Pine Labs Support Ecosystem Deep-Dive',body:'Comprehensive analysis of Pine Labs support structure — ticketing workflows, field service operations, training programs, and SLA tracking. Benchmark for our operations.',sentiment:'mixed',channel:'#pos-competition-intel',date:'2026-01-29',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'QR Infra & Card Payments — HeyMarvin Research Insights',body:'User research insights from HeyMarvin on QR infrastructure pain points and card payment experience. Key findings on merchant onboarding friction.',sentiment:'negative',channel:'#pos-competition-intel',date:'2026-01-27',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Merchant Conversation: Decathlon, Jayanagar',body:'Field visit to Decathlon Jayanagar store. Captured merchant perspective on current POS experience, pain points with device reliability, and feature requests.',sentiment:'mixed',channel:'#pos-customer-conversations',date:'2026-02-23',link:'https://razorpay.enterprise.slack.com/archives/C04RDEX10R4'},
+  {title:'Merchant Conversation: >100 Days Device Delivery',body:'Merchant reported device delivery taking over 100 days. Significant pain point — highlights fulfillment and logistics gap vs competitors.',sentiment:'negative',channel:'#pos-customer-conversations',date:'2026-02-20',link:'https://razorpay.enterprise.slack.com/archives/C04RDEX10R4'},
+  {title:'Pine Labs Merchant: Yes Vegetable Market',body:'Field visit notes from Yes Vegetable Market using Pine Labs terminal. Merchant feedback on device reliability, settlement speed, and support experience.',sentiment:'mixed',channel:'#pos-competition-intel',date:'2026-01-14',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Pine Labs Onboarding Experience Research',body:'Detailed research on Pine Labs merchant onboarding — activation timeline, documentation requirements, training process, first-transaction time benchmarking.',sentiment:'mixed',channel:'#pos-competition-intel',date:'2026-01-13',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Pine & Paytm Device Experience — Competitive Study',body:'Comprehensive competitive study deck comparing Pine Labs and Paytm device experiences. Covers hardware, software, onboarding, support, and merchant satisfaction.',sentiment:'alert',channel:'#pos-competition-intel',date:'2025-04-15',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'},
+  {title:'Paytm SCM & Affordability Deep-Dive',body:'Analysis of Paytm supply chain management and device affordability programs. How Paytm achieves lower device costs and faster deployment than competitors.',sentiment:'alert',channel:'#pos-competition-intel',date:'2025-07-10',link:'https://razorpay.enterprise.slack.com/archives/C083W7EF5V2'}
+];
+
+const VIP=['Pravir','Anand','SHK','Shashank','Harshil','Vivek','Rizwan','Gaurav','Mukesh','Aman'];
+let activeFilter='weekly';
+let currentTab='work';
+let sidebarOpen=true;
+let bulletinIdx=0;
+
+function getDateRange(filter){
+  const now=new Date();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59);
+  let from;
+  switch(filter){
+    case 'daily':
+      from=new Date(now.getFullYear(),now.getMonth(),now.getDate(),0,0,0);
+      break;
+    case 'weekly':
+      from=new Date(today);from.setDate(from.getDate()-7);from.setHours(0,0,0,0);
+      break;
+    case 'monthly':
+      from=new Date(today);from.setDate(from.getDate()-30);from.setHours(0,0,0,0);
+      break;
+    case 'quarterly':
+      from=new Date(today);from.setDate(from.getDate()-90);from.setHours(0,0,0,0);
+      break;
+    case 'custom':
+      const fv=document.getElementById('filter-from').value;
+      const tv=document.getElementById('filter-to').value;
+      from=fv?new Date(fv+'T00:00:00+05:30'):new Date(today.getTime()-7*86400000);
+      const customTo=tv?new Date(tv+'T23:59:59+05:30'):today;
+      return {from,to:customTo};
+    default:
+      from=new Date(today);from.setDate(from.getDate()-7);from.setHours(0,0,0,0);
+  }
+  return {from,to:today};
+}
+
+function isInRange(itemTime){
+  if(!itemTime)return true;
+  const dateOnly=itemTime.split('T')[0];
+  if(!dateOnly)return true;
+  const {from,to}=getDateRange(activeFilter);
+  const fromStr=from.getFullYear()+'-'+String(from.getMonth()+1).padStart(2,'0')+'-'+String(from.getDate()).padStart(2,'0');
+  const toStr=to.getFullYear()+'-'+String(to.getMonth()+1).padStart(2,'0')+'-'+String(to.getDate()).padStart(2,'0');
+  return dateOnly>=fromStr && dateOnly<=toStr;
+}
+
+function isVip(name){return VIP.some(v=>name.toLowerCase().includes(v.toLowerCase()));}
+
+function isRead(id){try{return JSON.parse(localStorage.getItem('rzp_read')||'[]').includes(id);}catch(e){return false;}}
+
+function markRead(id){try{const r=JSON.parse(localStorage.getItem('rzp_read')||'[]');if(!r.includes(id)){r.push(id);localStorage.setItem('rzp_read',JSON.stringify(r));}}catch(e){}}
+
+function toSlackDeepLink(webUrl){
+  // Keep all URLs as-is (web URLs) so they open in a browser tab
+  if(!webUrl)return '';
+  // Filter out bare Slack domain URLs with no path
+  if(/^https?:\/\/[^/]+\.slack\.com\/?$/.test(webUrl.trim()))return '';
+  return webUrl;
+}
+function getHref(url,id){
+  if(url)return toSlackDeepLink(url);
+  const item=D.slack.find(s=>s.id===id);
+  if(item&&item.ch){const ch=item.ch.replace(/^#/,'');const q=encodeURIComponent('in:'+ch+' '+item.body.split(' ').slice(0,6).join(' '));return 'https://razorpay.enterprise.slack.com/search/'+q;}
+  return '';
+}
+function openLink(url,id){
+  if(id)markRead(id);
+  // Explicitly open the link via window.open as fallback
+  var href=getHref(url,id)||url;
+  if(href && href!=='#'){
+    window.open(href,'_blank','noopener');
+  }
+  setTimeout(()=>{
+    render();
+    if(currentTab==='actions')renderActions();
+    if(currentTab==='ai')renderAI();
+    if(currentTab==='research')renderResearch();
+  }, 200);
+}
+
+function ft(t){if(!t)return '';return t;}
+
+function isNewSinceLastVisit(t){
+  try{
+    const last=localStorage.getItem('rzp_last_visit');
+    if(!last)return true;
+    return new Date(t)>new Date(parseInt(last));
+  }catch(e){return false;}
+}
+
+window.addEventListener('beforeunload',()=>{localStorage.setItem('rzp_last_visit',Date.now().toString());});
+
+function renderWithDrawer(items,renderFn,section){
+  const unread=items.filter(i=>!i._isRead);
+  const read=items.filter(i=>i._isRead);
+  let html=unread.map(renderFn).join('');
+  if(read.length){
+    html+=`<div class="read-drawer">
+      <div class="read-drawer-toggle" onclick="this.querySelector('.chevron').classList.toggle('open');this.parentElement.querySelector('.read-drawer-items').classList.toggle('open')">
+        <span class="chevron">&#9654;</span> Previously Read <span class="read-drawer-count">${read.length}</span>
+      </div>
+      <div class="read-drawer-items">${read.map(renderFn).join('')}</div>
+    </div>`;
+  }
+  return html||'<div style="padding:24px;text-align:center;color:var(--text4);font-size:13px">No items in selected period</div>';
+}
+
+function setFilter(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const show=f==='custom';
+  document.getElementById('filter-from').style.display=show?'inline-block':'none';
+  document.getElementById('filter-to').style.display=show?'inline-block':'none';
+  document.getElementById('filter-sep').style.display=show?'inline':'none';
+  updateFilterLabel();
+  render();
+  if(currentTab==='actions')renderActions();
+  if(currentTab==='ai')renderAI();
+  if(currentTab==='research')renderResearch();
+}
+
+function applyCustomFilter(){
+  updateFilterLabel();
+  render();
+  if(currentTab==='actions')renderActions();
+  if(currentTab==='ai')renderAI();
+  if(currentTab==='research')renderResearch();
+}
+
+function updateFilterLabel(){
+  const {from,to}=getDateRange(activeFilter);
+  const opts={day:'numeric',month:'short',year:'numeric'};
+  const label=document.getElementById('filter-range-label');
+  if(label)label.textContent=from.toLocaleDateString('en-IN',opts)+' — '+to.toLocaleDateString('en-IN',opts);
+}
+
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  document.getElementById('sidebar').classList.toggle('open',sidebarOpen);
+  document.getElementById('main-area').classList.toggle('sidebar-open',sidebarOpen);
+  document.getElementById('sidebar-toggle').innerHTML=sidebarOpen?'&#x276F;':'&#x276E;';
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>{
+    const tabs=['work','actions','research','ai'];
+    t.classList.toggle('active',tabs[i]===tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='ai')renderAI();
+  if(tab==='actions')renderActions();
+  if(tab==='research')renderResearch();
+}
+
+function render(){
+  if(!D) D=_D_STATIC; // fallback to static data if Firestore hasn't loaded yet
+  const now=new Date().toLocaleString('en-IN',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true})+' IST';
+  const clk=document.getElementById('clock');if(clk)clk.textContent=now;
+
+  function parseTime(t){if(!t)return 0;const p=t.match(/(\d+):(\d+)\s*(AM|PM)/i);if(!p)return 0;let h=parseInt(p[1]);const m=parseInt(p[2]);const ap=p[3].toUpperCase();if(ap==='PM'&&h!==12)h+=12;if(ap==='AM'&&h===12)h=0;return h*60+m;}
+  const filteredSlack=D.slack.filter(m=>isInRange(m.date+'T00:00:00+05:30')).sort((a,b)=>{const dd=b.date.localeCompare(a.date);return dd!==0?dd:parseTime(b.time)-parseTime(a.time);});
+  const filteredEmail=D.email.filter(m=>isInRange(m.date+'T00:00:00+05:30')).sort((a,b)=>{const dd=b.date.localeCompare(a.date);return dd!==0?dd:parseTime(b.time)-parseTime(a.time);});
+
+  document.getElementById('stats').innerHTML=[
+    {n:filteredSlack.length,l:'Slack Messages',c:'var(--azure)'},
+    {n:filteredEmail.filter(x=>x.p==='high').length,l:'Priority Mail',c:'var(--cider)'},
+    {n:D.pod.incidents.filter(i=>isInRange(i.time)).length,l:'Incidents',c:'var(--crimson)'},
+    {n:D.pod.issues.filter(i=>isInRange(i.time)).length,l:'Open Issues',c:'var(--orchid)'},
+    {n:D.cal.tomorrow.length,l:'Tomorrow',c:'var(--azure)'}
+  ].map(x=>`<div class="stat"><div class="stat-val" style="color:${x.c}">${x.n}</div><div class="stat-label">${x.l}</div></div>`).join('');
+
+  document.getElementById('slack-sub').textContent=filteredSlack.length+' messages';
+  const slackItems=filteredSlack.map(m=>({...m,_isRead:isRead(m.id)}));
+  document.getElementById('slack-list').innerHTML=renderWithDrawer(slackItems, m=>{
+    const rd=m._isRead;const nslv=isNewSinceLastVisit(m.date+'T00:00:00+05:30');
+    const hr=getHref(m.link,m.id);
+    return `<a class="li${rd?' read':''}${nslv?' new-marker new-pulse':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${m.link}','${m.id}')${hr?'':';return false'}" data-nav="slack" style="display:block;text-decoration:none;color:inherit">
+      <div class="li-row">
+        ${isVip(m.from)?'<span class="t t-vip">VIP</span>':''}
+        ${rd?'<span class="t t-read">Read</span>':'<span class="t t-new">New</span>'}
+        <span class="from">${m.from}</span>
+        <span class="src">${m.ch}</span>
+      </div>
+      <div class="li-text">${m.subj}</div>
+      <div class="li-meta"><span>${m.time}</span></div>
+    </a>`;
+  }, 'slack');
+
+  document.getElementById('email-sub').textContent=filteredEmail.filter(x=>x.p==='high').length+' priority';
+  const emailItems=filteredEmail.map(m=>({...m,_isRead:isRead(m.id)}));
+  document.getElementById('email-list').innerHTML=renderWithDrawer(emailItems, m=>{
+    const rd=m._isRead;const tc=m.p==='high'?'t-hi':m.p==='medium'?'t-med':'t-lo';const nslv=isNewSinceLastVisit(m.date+'T00:00:00+05:30');
+    const hr=getHref(m.link,m.id);
+    return `<a class="li${rd?' read':''}${nslv?' new-marker new-pulse':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${m.link}','${m.id}')${hr?'':';return false'}" data-nav="email" style="display:block;text-decoration:none;color:inherit">
+      <div class="li-row">
+        <span class="t ${tc}">${m.p}</span>
+        ${rd?'<span class="t t-read">Read</span>':'<span class="t t-new">New</span>'}
+        <span class="from">${m.from}</span>
+      </div>
+      <div class="li-text" style="font-weight:500">${m.subj}</div>
+      <div class="li-text" style="color:var(--text3);font-style:italic">${m.snip}</div>
+      <div class="li-meta"><span>${m.time}</span></div>
+    </a>`;
+  }, 'email');
+
+  const inc=D.pod.incidents.filter(i=>isInRange(i.time));
+  const res=D.pod.resolved.filter(i=>isInRange(i.time));
+  const iss=D.pod.issues.filter(i=>isInRange(i.time));
+  const enh=D.pod.enhancements.filter(i=>isInRange(i.time));
+  const off=D.pod.offline.filter(i=>isInRange(i.time));
+  const dep=D.pod.deploys.filter(i=>isInRange(i.time));
+  const hc=inc.some(i=>i.sev==='P0')?'var(--crimson)':inc.length?'var(--cider)':'var(--emerald)';
+  document.getElementById('pod-hdr').innerHTML=`<span style="color:${hc}">${inc.length?'Pod Health — Warning':'Pod Health — Healthy'}</span>`;
+
+  let ph=`<div class="metric-grid">
+    <div class="metric"><div class="metric-val" style="color:${hc}">${inc.length}</div><div class="metric-label">Active</div></div>
+    <div class="metric"><div class="metric-val" style="color:var(--emerald)">${res.length}</div><div class="metric-label">Resolved</div></div>
+    <div class="metric"><div class="metric-val" style="color:var(--azure)">${dep.length}</div><div class="metric-label">Deploys</div></div>
+  </div>`;
+
+  if(inc.length){ph+=`<div class="subsection">Active Incidents</div>`;ph+=inc.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t t-p1">${i.sev}</span><span class="from">${i.title}</span></div><div class="li-meta"><span>${i.who}</span></div></a>`).join('');}
+  if(res.length){ph+=`<div class="subsection">Resolved Today</div>`;ph+=res.map(i=>`<div class="li"><div class="li-row"><span class="t t-ok">OK</span><span class="from">${i.title}</span></div></div>`).join('');}
+  if(iss.length){ph+=`<div class="subsection">DevRev Issues</div>`;ph+=iss.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t ${i.p==='P0'?'t-p0':'t-p1'}">${i.p}</span><span class="from">${i.title}</span></div><div class="li-meta"><span>${i.stage}</span><span>${i.owner}</span></div></a>`).join('');}
+  if(enh.length){ph+=`<div class="subsection">Enhancements</div>`;ph+=enh.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t t-impl">${i.stage}</span><span class="from">${i.name}</span></div><div class="li-meta"><span>${i.owners}</span></div></a>`).join('');}
+  if(off.length){ph+=`<div class="subsection">Offline QR Updates</div>`;ph+=off.map(i=>`<div class="li"><div class="li-row"><span class="t t-muted">QR</span><span class="from">${i.from}</span></div><div class="li-text">${i.text}</div></div>`).join('');}
+  if(!inc.length && !res.length && !iss.length && !enh.length && !off.length){
+    ph+='<div style="padding:24px;text-align:center;color:var(--text4);font-size:13px">No pod activity in selected period</div>';
+  }
+  document.getElementById('pod-list').innerHTML=ph;
+
+  const M=D.metrics;
+  let mp=`<div class="metric-grid">
+    <div class="metric"><div class="metric-val" style="color:var(--azure)">${M.qr_gen}</div><div class="metric-label">QR Gen</div><div class="metric-delta" style="color:var(--crimson)">${M.qr_gen_d}</div></div>
+    <div class="metric"><div class="metric-val" style="color:var(--cider)">${M.gen_sr}</div><div class="metric-label">Creation SR</div><div class="metric-delta" style="color:var(--crimson)">${M.gen_sr_d}</div></div>
+    <div class="metric"><div class="metric-val" style="color:var(--cider)">${M.pay_sr}</div><div class="metric-label">Payment SR</div></div>
+  </div>`;
+  mp+=`<div class="subsection">Latency (P95)</div>`;
+  mp+=`<div class="kv"><span>Callback</span><span class="kv-v" style="color:var(--cider)">${M.cb_lat}</span></div>`;
+  mp+=`<div class="kv"><span>API Gen</span><span class="kv-v" style="color:var(--emerald)">${M.api_lat}</span></div>`;
+  mp+=`<div class="kv"><span>APP Gen</span><span class="kv-v" style="color:var(--emerald)">${M.app_lat}</span></div>`;
+  mp+=`<div class="subsection">Expiry</div>`;
+  mp+=`<div class="kv"><span>QRs Expired</span><span class="kv-v" style="color:var(--crimson)">${M.expired} <small>${M.expired_d}</small></span></div>`;
+  mp+=`<div class="kv"><span>Post-Expiry CB</span><span class="kv-v" style="color:var(--crimson)">${M.cb_post} <small>${M.cb_post_d}</small></span></div>`;
+  mp+=`<div class="subsection">Creation SR Trend</div><div class="bars">`;
+  M.mom.forEach(m=>{const h=Math.max(8,(m.v-94)*16);const c=m.v<96?'var(--crimson)':m.v<96.5?'var(--cider)':'var(--emerald)';mp+=`<div style="flex:1;text-align:center"><div class="bar" style="height:${h}px;background:${c};margin:0 auto;width:70%"></div><div class="bar-label">${m.m}</div></div>`;});
+  mp+=`</div><div style="font-size:10px;color:var(--crimson);text-align:center;padding:4px 0 8px;font-weight:500">Feb: 95.12% — 8-month low</div>`;
+  mp+=`<div class="subsection">Alerts (24h)</div><div class="kv"><span>Live</span><span class="kv-v">${M.alerts}</span></div><div class="kv"><span>Business</span><span class="kv-v">${M.biz_alerts}</span></div>`;
+  document.getElementById('metrics-panel').innerHTML=mp;
+
+  document.getElementById('cal-sub').textContent=D.cal.today.length+' today';
+  document.getElementById('cal-today').innerHTML=D.cal.today.map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><div style="flex:1"><span class="from">${e.title}</span></div></div>`).join('');
+  document.getElementById('cal-pending').innerHTML=(D.cal.pending||[]).map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><span class="cal-badge" style="background:var(--cider-soft);color:var(--cider)">${e.action||''}</span></div>`).join('');
+  document.getElementById('cal-tomorrow').innerHTML=D.cal.tomorrow.map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><div style="flex:1"><span class="from">${e.title}</span></div></div>`).join('');
+}
+
+function renderActions(){
+  if(!ACTIONS) ACTIONS=_ACTIONS_STATIC; // fallback to static data if Firestore hasn't loaded yet
+  const today=ACTIONS.today.map((a,i)=>({...a,_idx:i,_isRead:isRead('action-today-'+i)}));
+  document.getElementById('actions-today').innerHTML=renderWithDrawer(today, a=>{
+    const rd=a._isRead;
+    return `<div class="action-item${rd?' read':''}" onclick="markRead('action-today-${a._idx}');render()">
+      <div class="action-dot" style="background:${a.priority==='high'?'var(--crimson)':a.priority==='medium'?'var(--cider)':'var(--emerald)'}"></div>
+      <div class="action-content">
+        <div class="action-title">${a.text}</div>
+        <div class="action-source"><span class="t ${a.type==='slack'?'t-fyi':a.type==='devrev'?'t-hi':'t-action'}">${a.type}</span></div>
+      </div>
+    </div>`;
+  }, 'actions-today');
+
+  const tomorrow=ACTIONS.tomorrow.map((a,i)=>({...a,_idx:i,_isRead:isRead('action-tomorrow-'+i)}));
+  document.getElementById('actions-tomorrow').innerHTML=renderWithDrawer(tomorrow, a=>{
+    const rd=a._isRead;
+    return `<div class="action-item${rd?' read':''}" onclick="markRead('action-tomorrow-${a._idx}');render()">
+      <div class="action-dot" style="background:${a.priority==='high'?'var(--crimson)':a.priority==='medium'?'var(--cider)':'var(--emerald)'}"></div>
+      <div class="action-content">
+        <div class="action-title">${a.text}</div>
+        <div class="action-source"><span class="t ${a.type==='slack'?'t-fyi':a.type==='devrev'?'t-hi':'t-action'}">${a.type}</span></div>
+      </div>
+    </div>`;
+  }, 'actions-tomorrow');
+
+  const slack=ACTIONS.slack.map((a,i)=>({...a,_idx:i,_isRead:isRead('action-slack-'+i)}));
+  document.getElementById('actions-slack').innerHTML=renderWithDrawer(slack, a=>{
+    const rd=a._isRead;
+    return `<div class="action-item${rd?' read':''}" onclick="markRead('action-slack-${a._idx}');render()">
+      <div class="action-dot" style="background:var(--cider)"></div>
+      <div class="action-content">
+        <div class="action-title">${a.text}</div>
+        <div class="action-source"><span class="t t-action">${a.type}</span> <span style="color:var(--text3)">${a.priority}</span></div>
+      </div>
+    </div>`;
+  }, 'actions-slack');
+}
+
+function renderResearch(){
+  const tags=['t-paytm','t-phonepe','t-pine','t-comp'];
+  const stats=tags.map(tag=>{
+    const count=COMPETITORS.filter(c=>c.tag===tag).length;
+    let label='Paytm';if(tag==='t-phonepe')label='PhonePe';if(tag==='t-pine')label='Pine Labs';if(tag==='t-comp')label='Others';
+    return {label,count};
+  });
+  document.getElementById('research-stats').innerHTML=stats.map(s=>`<div class="stat" style="flex:none;min-width:120px"><div class="stat-val" style="color:var(--azure)">${s.count}</div><div class="stat-label">${s.label}</div></div>`).join('');
+
+  const renderComp=(tag,id)=>{
+    const items=COMPETITORS.filter(c=>c.tag===tag).map((c,i)=>({...c,_idx:i,_isRead:isRead(id+'-'+i)}));
+    return renderWithDrawer(items, c=>{
+      const rd=c._isRead;const nslv=isNewSinceLastVisit(c.date);
+      const hr=toSlackDeepLink(c.sources[0]?.url)||c.sources[0]?.url||'';
+      return `<a class="research-item${rd?' read':''}${nslv?' new-marker':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${hr}','${id}-${c._idx}')${hr?'':';return false'}" data-nav="${id}" style="display:block;text-decoration:none;color:inherit">
+        <div class="research-title">${c.title}</div>
+        <div class="research-body">${c.body}</div>
+        <div class="research-meta">
+          <span class="impact-badge impact-${c.impact}">${c.impact}</span>
+          <span class="research-date">${new Date(c.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'})}</span>
+        </div>
+      </a>`;
+    }, id);
+  };
+
+  document.getElementById('comp-paytm').innerHTML=renderComp('t-paytm','comp-paytm');
+  document.getElementById('comp-phonepe').innerHTML=renderComp('t-phonepe','comp-phonepe');
+  document.getElementById('comp-pine').innerHTML=renderComp('t-pine','comp-pine');
+  document.getElementById('comp-others').innerHTML=renderComp('t-comp','comp-others');
+
+  const fb=MERCHANT_FEEDBACK.map((f,i)=>({...f,_idx:i,_isRead:isRead('fb-'+i)}));
+  document.getElementById('merchant-feedback').innerHTML=renderWithDrawer(fb, f=>{
+    const rd=f._isRead;const nslv=isNewSinceLastVisit(f.date);
+    const hr=toSlackDeepLink(f.link)||f.link||'';
+    return `<a class="research-item${rd?' read':''}${nslv?' new-marker':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${hr}','fb-${f._idx}')${hr?'':';return false'}" data-nav="feedback" style="display:block;text-decoration:none;color:inherit">
+      <div class="research-title">${f.title}</div>
+      <div class="research-body">${f.body}</div>
+      <div class="research-meta">
+        <span class="sentiment-badge sentiment-${f.sentiment}">${f.sentiment}</span>
+        <span class="research-date">${f.channel}</span>
+      </div>
+    </a>`;
+  }, 'feedback');
+}
+
+function renderBulletin(){
+  const items=[...AI_EXTERNAL,...AI_INTERNAL.map(a=>({...a,src:a.team}))];
+  const el=document.getElementById('ai-ext-bulletin');
+  if(!el||!items.length){if(el)el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text4);font-size:13px">No AI updates in selected period</div>';return;}
+  bulletinIdx=bulletinIdx%items.length;
+  const ts=document.getElementById('ai-ts');
+  if(ts)ts.textContent=items.length+' signals';
+  el.innerHTML=items.map((it,i)=>{const hr=toSlackDeepLink(it.link)||it.link||'';return `<div class="bulletin-item${i===bulletinIdx?' active':''}" onclick="if('${hr}')openLink('${hr}','bulletin-${i}');bulletinIdx=${i};renderBulletin()" style="cursor:pointer">
+    <div class="bulletin-head">${it.title}</div>
+    <div class="bulletin-src">${it.src||it.team} · ${new Date(it.time).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
+    ${hr?`<div style="margin-top:4px"><a class="article-link" href="${hr}" target="_blank" onclick="event.stopPropagation()">Read &rarr;</a></div>`:''}
+  </div>`;}).join('');
+  bulletinIdx=(bulletinIdx+1)%items.length;
+}
+
+function renderAI(){
+  const filteredNews=NEWS.map((n,i)=>({...n,_idx:i,_isRead:isRead('news-'+i)}));
+  document.getElementById('news-list').innerHTML=renderWithDrawer(filteredNews, n=>{
+    const rd=n._isRead;const nslv=isNewSinceLastVisit(n.time);
+    const hr=toSlackDeepLink(n.link)||n.link||'';
+    return `<a class="article${rd?' read':''}${nslv?' new-marker new-pulse':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${hr}','news-${n._idx}')${hr?'':';return false'}" data-nav="news" style="display:block;text-decoration:none;color:inherit">
+      <div class="li-row" style="margin-bottom:4px">
+        <span class="t t-ext">${n.src}</span>
+        ${rd?'<span class="t t-read">Read</span>':'<span class="t t-new">New</span>'}
+      </div>
+      <div class="article-title">${n.title}</div>
+      <div class="article-body">${n.body}</div>
+      <div class="article-footer"><span class="article-link">Read &rarr;</span></div>
+    </a>`;
+  }, 'news');
+
+  renderBulletin();
+
+  const filteredCXO=CXO_AI.map((c,i)=>({...c,_idx:i,_isRead:isRead('cxo-'+i)}));
+  document.getElementById('cxo-list').innerHTML=renderWithDrawer(filteredCXO, c=>{
+    const rd=c._isRead;const nslv=isNewSinceLastVisit(c.time+'T00:00:00+05:30');
+    const hr=toSlackDeepLink(c.link)||c.link||'';
+    return `<a class="li${rd?' read':''}${nslv?' new-marker new-pulse':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${hr}','cxo-${c._idx}')${hr?'':';return false'}" data-nav="cxo" style="display:block;text-decoration:none;color:inherit">
+      <div class="li-row"><span class="t t-cxo">CXO</span><span class="from">${c.who}</span><span class="src">${c.role}</span></div>
+      <div class="li-text">"${c.text}"</div>
+    </a>`;
+  }, 'cxo');
+
+  const filteredInt=AI_INTERNAL.map((a,i)=>({...a,_idx:i,_isRead:isRead('ai-int-'+i)}));
+  document.getElementById('ai-int-list').innerHTML=renderWithDrawer(filteredInt, a=>{
+    const rd=a._isRead;const nslv=isNewSinceLastVisit(a.time);
+    const hr=toSlackDeepLink(a.link)||a.link||'';
+    return `<a class="article${rd?' read':''}${nslv?' new-marker new-pulse':''}" href="${hr||'#'}" target="_blank" rel="noopener" onclick="openLink('${hr}','ai-int-${a._idx}')${hr?'':';return false'}" data-nav="ai-int" style="display:block;text-decoration:none;color:inherit">
+      <div class="li-row" style="margin-bottom:4px">
+        <span class="t t-int">${a.team}</span>
+        ${rd?'<span class="t t-read">Read</span>':'<span class="t t-new">New</span>'}
+      </div>
+      <div class="article-title">${a.title}</div>
+      <div class="article-body">${a.body}</div>
+      ${hr?'<div class="article-footer"><span class="article-link">Read &rarr;</span></div>':''}
+    </a>`;
+  }, 'ai-int');
+}
+
+function askQ(q){
+  const inp=document.getElementById('chat-in');
+  if(inp)inp.value=q;
+}
+
+function sendChat(){
+  const inp=document.getElementById('chat-in');
+  const val=inp?inp.value:'';
+  if(!val.trim())return;
+  const body=document.getElementById('chat-body');
+  if(body){
+    const msg=document.createElement('div');
+    msg.className='chat-msg';
+    msg.innerHTML='<div class="chat-user">'+val+'</div>';
+    body.appendChild(msg);
+    if(inp)inp.value='';
+    body.scrollTop=body.scrollHeight;
+  }
+}
+
+function refreshDashboard(){
+  var btn=document.getElementById('refreshBtn');
+  if(!btn)return;
+  btn.classList.add('refreshing');
+  btn.innerHTML='<span class="refresh-icon">&#x21bb;</span> Refreshing...';
+  // Show a toast notification
+  var toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1d21;color:#fff;padding:12px 24px;border-radius:8px;font-size:13px;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:0 4px 24px rgba(0,0,0,.15);animation:fadeUp .3s ease';
+  toast.innerHTML='<span style="animation:spin .8s linear infinite;display:inline-block">&#x21bb;</span> Fetching latest from Slack, Gmail & Calendar...';
+  var style=document.createElement('style');
+  style.textContent='@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+  document.head.appendChild(style);
+  document.body.appendChild(toast);
+  // Reload after brief delay to show animation
+  setTimeout(function(){
+    toast.innerHTML='&#x2713; Reloading dashboard with latest data...';
+    toast.style.background='#059669';
+    setTimeout(function(){location.reload()},800);
+  },1500);
+}
+
+// ── GitHub Gist live sync ──────────────────────────────────────────────────
+// ⚙️  FILL IN YOUR GIST ID BELOW after running the one-time setup in DEPLOY.md
+const GIST_ID = '44cff099f40e892042c87bf2e8e5018a';
+const GIST_FILE = 'briefing-data.json';
+const GITHUB_USER = 'namangoyal-prod';
+const POLL_INTERVAL_MS = 60000; // re-fetch from Gist every 60 seconds
+
+function showBadge(msg, color, autohide){
+  let badge=document.getElementById('gh-badge');
+  if(!badge){
+    badge=document.createElement('div');
+    badge.id='gh-badge';
+    badge.style.cssText='position:fixed;top:10px;right:16px;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;z-index:9999;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+    document.body.appendChild(badge);
+  }
+  badge.innerHTML=msg;
+  badge.style.background=color;
+  badge.style.display='flex';
+  if(autohide) setTimeout(()=>{badge.style.display='none';}, autohide);
+}
+
+async function loadFromGist(){
+  if(GIST_ID==='YOUR_GIST_ID'){
+    // No Gist configured yet — use static data bundled in file
+    D=_D_STATIC; ACTIONS=_ACTIONS_STATIC;
+    render(); renderActions(); renderAI(); renderResearch(); updateFilterLabel();
+    return;
+  }
+  showBadge('<span style="animation:spin .8s linear infinite;display:inline-block">&#x21bb;</span> Fetching…','#0066ff',0);
+  try{
+    const resp=await fetch('https://api.github.com/gists/'+GIST_ID,
+      {headers:{'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},cache:'no-store'});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const gist=await resp.json();
+    const content=JSON.parse(gist.files[GIST_FILE].content);
+    D=content.data||_D_STATIC;
+    ACTIONS=content.actions||_ACTIONS_STATIC;
+    const ts=content.updatedAt||new Date(gist.updated_at).toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'})+' IST';
+    showBadge('&#x25cf; Live &nbsp;<span style="font-weight:400;opacity:.8">'+ts+'</span>','#059669',4000);
+  }catch(err){
+    console.warn('Gist fetch error',err);
+    if(!D){D=_D_STATIC; ACTIONS=_ACTIONS_STATIC;}
+    showBadge('&#x26a0; Offline — showing cached','#d97706',5000);
+  }
+  render(); renderActions(); renderAI(); renderResearch(); updateFilterLabel();
+}
+
+// Override refreshDashboard: re-fetch from Gist immediately
+function refreshDashboard(){
+  showBadge('<span style="animation:spin .8s linear infinite;display:inline-block">&#x21bb;</span> Refreshing from Gist…','#0066ff',0);
+  loadFromGist();
+}
+
+// Bootstrap: load immediately, then poll every 60 s
+loadFromGist();
+setInterval(loadFromGist, POLL_INTERVAL_MS);
+  </script>
+</body>
+</html>
