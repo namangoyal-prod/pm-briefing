@@ -447,8 +447,8 @@ let _D_STATIC={
   },
   pod:{
     incidents:[
-      {id:'inc1',title:'UPI QR NTF — Online terminal rule causing POS failures',severity:'P0',status:'Investigating',time:'Today',owner:'Naman Goyal / Kanishk Mehta',link:'https://razorpay.slack.com/archives/C02B75CA8V9/p1771944028588209'},
-      {id:'inc2',title:'DS filter rule — 3rd P0 in 2 weeks',severity:'P0',status:'Mitigation applied',time:'Saturday',owner:'Aman Patel',link:'https://razorpay.slack.com/archives/C01LVNRNP7F/p1770751745243899'}
+      {id:'inc1',title:'UPI QR NTF — Online terminal rule causing POS failures',severity:'P0',status:'Investigating',time:'Today',date:'2026-03-18',owner:'Naman Goyal / Kanishk Mehta',link:'https://razorpay.slack.com/archives/C02B75CA8V9/p1771944028588209'},
+      {id:'inc2',title:'DS filter rule — 3rd P0 in 2 weeks',severity:'P0',status:'Mitigation applied',time:'Saturday',date:'2026-03-15',owner:'Aman Patel',link:'https://razorpay.slack.com/archives/C01LVNRNP7F/p1770751745243899'}
     ],
     resolved:[
       {id:'res1',title:'Saturday NTF fix — global rule for Online Terminals UPI',time:'2026-03-08',owner:'Naman Goyal'}
@@ -463,10 +463,14 @@ let _D_STATIC={
     deploys:[]
   },
   metrics:{
-    qr_sr:99.2,
-    pos_sr:98.8,
-    qr_vol:'1.2M',
-    pos_vol:'450K'
+    qr_gen:'1.2M',qr_gen_d:'↑3%',
+    gen_sr:'97.8%',gen_sr_d:'↓0.3%',
+    pay_sr:'99.2%',
+    cb_lat:'340ms',api_lat:'180ms',app_lat:'210ms',
+    expired:'4,821',expired_d:'↑12%',
+    cb_post:'1,203',cb_post_d:'↑8%',
+    mom:[{m:'Sep',v:97.2},{m:'Oct',v:96.8},{m:'Nov',v:97.1},{m:'Dec',v:96.5},{m:'Jan',v:96.8},{m:'Feb',v:95.12}],
+    alerts:'3 live',biz_alerts:'1 open'
   }
 };
 
@@ -498,11 +502,14 @@ const _ACTIONS_STATIC={
 };
 
 const NEWS=[
-  {src:'Inc42',title:'India PG Market to Hit $4B by 2031',body:'Payment gateway market growing at 8.6% CAGR. UPI driving digital payment adoption across merchant segments.',time:'2026-02-24T10:00:00+05:30',link:'https://inc42.com'},
-  {src:'YourStory',title:'Juspay Raises $100M for Payment Orchestration',body:'Juspay raises fresh funding to expand Hyperswitch platform. Plans to challenge Razorpay in enterprise payments.',time:'2026-02-22T09:00:00+05:30',link:'https://yourstory.com'},
-  {src:'TechCrunch',title:'PhonePe IPO Timeline: H2 2026',body:'PhonePe targeting H2 2026 for IPO at $12B valuation. Merchant services and lending to drive growth narrative.',time:'2026-02-21T08:00:00+05:30',link:'https://techcrunch.com'},
-  {src:'Medianama',title:'Pine Labs Patent: Tap-to-Pay-Online Innovation',body:'Pine Labs patents technology bridging online and offline payments through NFC tap on POS terminals.',time:'2026-02-19T11:00:00+05:30',link:'https://medianama.com'},
-  {src:'ET Tech',title:'UPI Hits 16 Billion Monthly Transactions',body:'UPI transaction volume reaches new record. RBI considering tiered MDR for high-value UPI payments.',time:'2026-02-18T10:00:00+05:30',link:'https://economictimes.indiatimes.com'}
+  {src:'Inc42',title:'Jio Likely To File Draft IPO Papers By Month-End',body:'Jio Platforms may file its DRHP with SEBI as early as end of March. One of the largest IPOs in Indian startup history — significant implications for digital payments and fintech ecosystem.',time:'2026-03-18T11:48:24+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773814704769759'},
+  {src:'Inc42',title:'Perfios Appoints Former SBI Executive Nitin Chugh As Group CEO',body:'B2B fintech SaaS unicorn Perfios appoints former SBI Deputy MD as Group CEO — signals push into large enterprise banking clients. Perfios competes in credit underwriting infra used by Razorpay\'s lending partners.',time:'2026-03-18T14:48:40+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773825520043569'},
+  {src:'Inc42',title:'India\'s AI Edge Lies In Sector-Specific Intelligence, Not Mega LLMs',body:'India\'s AI differentiation will come from vertical-specific models trained on local datasets — payments, lending, agri — rather than competing with OpenAI/Google on foundation models.',time:'2026-03-18T13:58:32+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773822512114489'},
+  {src:'Inc42',title:'AI Governance Moves From Boardrooms To Business Strategy',body:'Organisations shifting AI governance from policy documents to operational workflows. Hiring, customer-facing products, and risk management all seeing AI-driven process changes.',time:'2026-03-18T14:18:21+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773823701114409'},
+  {src:'Inc42',title:'Aerchain Bags $13 Mn For Agentic AI Platform For Enterprise Procurement',body:'Aerchain raises Series A for agentic AI in enterprise procurement. Part of the broader wave of vertical AI agents disrupting B2B SaaS — relevant for Razorpay\'s enterprise payments roadmap.',time:'2026-03-18T13:58:32+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773822512156829'},
+  {src:'YourStory',title:'Optimo Capital Secures Rs 100 Cr Credit From Punjab National Bank',body:'MSME-focused NBFC Optimo Capital raises Rs 100 Cr from PNB and partners with Godrej Finance for Rs 200 Cr disbursement. MSME lending ecosystem growing — merchant lending opportunity for Razorpay.',time:'2026-03-18T13:15:45+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773819945127869'},
+  {src:'YourStory',title:'Burger Singh Raises Rs 82 Cr Series B To Scale Franchise Platform',body:'QSR brand Burger Singh raises Series B for franchise expansion. Growing franchise segment = growing merchant acquiring opportunity for Razorpay POS and payment gateway.',time:'2026-03-18T14:35:41+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773824741509539'},
+  {src:'Inc42',title:'CometChat Nets $6.5 Mn To Scale Agentic AI Offerings',body:'User engagement startup CometChat raises funding to expand agentic AI — conversational AI for customer support and engagement. Relevant as Razorpay evaluates AI copilots for merchant support.',time:'2026-03-18T14:48:40+05:30',link:'https://razorpay.slack.com/archives/C79RG4NFR/p1773825520123449'}
 ];
 
 const CXO_AI=[
@@ -739,8 +746,8 @@ function render(){
   document.getElementById('stats').innerHTML=[
     {n:filteredSlack.length,l:'Slack Messages',c:'var(--azure)'},
     {n:filteredEmail.filter(x=>x.p==='high').length,l:'Priority Mail',c:'var(--cider)'},
-    {n:D.pod.incidents.filter(i=>isInRange(i.time)).length,l:'Incidents',c:'var(--crimson)'},
-    {n:D.pod.issues.filter(i=>isInRange(i.time)).length,l:'Open Issues',c:'var(--orchid)'},
+    {n:D.pod.incidents.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined)).length,l:'Incidents',c:'var(--crimson)'},
+    {n:D.pod.issues.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined)).length,l:'Open Issues',c:'var(--orchid)'},
     {n:D.cal.tomorrow.length,l:'Tomorrow',c:'var(--azure)'}
   ].map(x=>`<div class="stat"><div class="stat-val" style="color:${x.c}">${x.n}</div><div class="stat-label">${x.l}</div></div>`).join('');
 
@@ -778,13 +785,13 @@ function render(){
     </a>`;
   }, 'email');
 
-  const inc=D.pod.incidents.filter(i=>isInRange(i.time));
-  const res=D.pod.resolved.filter(i=>isInRange(i.time));
-  const iss=D.pod.issues.filter(i=>isInRange(i.time));
-  const enh=D.pod.enhancements.filter(i=>isInRange(i.time));
-  const off=D.pod.offline.filter(i=>isInRange(i.time));
-  const dep=D.pod.deploys.filter(i=>isInRange(i.time));
-  const hc=inc.some(i=>i.sev==='P0')?'var(--crimson)':inc.length?'var(--cider)':'var(--emerald)';
+  const inc=D.pod.incidents.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined));
+  const res=D.pod.resolved.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':i.time));
+  const iss=D.pod.issues.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined));
+  const enh=D.pod.enhancements.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined));
+  const off=D.pod.offline.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined));
+  const dep=D.pod.deploys.filter(i=>isInRange(i.date?i.date+'T00:00:00+05:30':undefined));
+  const hc=inc.some(i=>i.severity==='P0')?'var(--crimson)':inc.length?'var(--cider)':'var(--emerald)';
   document.getElementById('pod-hdr').innerHTML=`<span style="color:${hc}">${inc.length?'Pod Health — Warning':'Pod Health — Healthy'}</span>`;
 
   let ph=`<div class="metric-grid">
@@ -793,10 +800,10 @@ function render(){
     <div class="metric"><div class="metric-val" style="color:var(--azure)">${dep.length}</div><div class="metric-label">Deploys</div></div>
   </div>`;
 
-  if(inc.length){ph+=`<div class="subsection">Active Incidents</div>`;ph+=inc.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t t-p1">${i.sev}</span><span class="from">${i.title}</span></div><div class="li-meta"><span>${i.who}</span></div></a>`).join('');}
+  if(inc.length){ph+=`<div class="subsection">Active Incidents</div>`;ph+=inc.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t ${i.severity==='P0'?'t-p0':'t-p1'}">${i.severity||'INC'}</span><span class="from">${i.title}</span></div><div class="li-meta"><span>${i.status||''}</span><span>${i.owner||''}</span></div></a>`).join('');}
   if(res.length){ph+=`<div class="subsection">Resolved Today</div>`;ph+=res.map(i=>`<div class="li"><div class="li-row"><span class="t t-ok">OK</span><span class="from">${i.title}</span></div></div>`).join('');}
-  if(iss.length){ph+=`<div class="subsection">DevRev Issues</div>`;ph+=iss.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t ${i.p==='P0'?'t-p0':'t-p1'}">${i.p}</span><span class="from">${i.title}</span></div><div class="li-meta"><span>${i.stage}</span><span>${i.owner}</span></div></a>`).join('');}
-  if(enh.length){ph+=`<div class="subsection">Enhancements</div>`;ph+=enh.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t t-impl">${i.stage}</span><span class="from">${i.name}</span></div><div class="li-meta"><span>${i.owners}</span></div></a>`).join('');}
+  if(iss.length){ph+=`<div class="subsection">DevRev Issues</div>`;ph+=iss.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t ${i.priority==='P0'?'t-p0':'t-p1'}">${i.priority||'ISS'}</span><span class="from">${i.title}</span></div><div class="li-meta"><span>${i.status||''}</span><span>${i.owner||''}</span></div></a>`).join('');}
+  if(enh.length){ph+=`<div class="subsection">Enhancements</div>`;ph+=enh.map(i=>`<a class="li" href="${i.link||'#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><div class="li-row"><span class="t t-impl">${i.status||'In Progress'}</span><span class="from">${i.title||i.name||''}</span></div><div class="li-meta"><span>${i.owner||i.owners||''}</span></div></a>`).join('');}
   if(off.length){ph+=`<div class="subsection">Offline QR Updates</div>`;ph+=off.map(i=>`<div class="li"><div class="li-row"><span class="t t-muted">QR</span><span class="from">${i.from}</span></div><div class="li-text">${i.text}</div></div>`).join('');}
   if(!inc.length && !res.length && !iss.length && !enh.length && !off.length){
     ph+='<div style="padding:24px;text-align:center;color:var(--text4);font-size:13px">No pod activity in selected period</div>';
@@ -824,7 +831,7 @@ function render(){
 
   document.getElementById('cal-sub').textContent=D.cal.today.length+' today';
   document.getElementById('cal-today').innerHTML=D.cal.today.map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><div style="flex:1"><span class="from">${e.title}</span></div></div>`).join('');
-  document.getElementById('cal-pending').innerHTML=(D.cal.pending||[]).map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><span class="cal-badge" style="background:var(--cider-soft);color:var(--cider)">${e.action||''}</span></div>`).join('');
+  document.getElementById('cal-pending').innerHTML=(D.cal.pending||[]).map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><div style="flex:1"><span class="from">${e.title||''}</span></div><span class="cal-badge" style="background:var(--cider-soft);color:var(--cider);flex-shrink:0">RSVP</span></div>`).join('');
   document.getElementById('cal-tomorrow').innerHTML=D.cal.tomorrow.map(e=>`<div class="cal-item"><span class="cal-time">${e.time}</span><div style="flex:1"><span class="from">${e.title}</span></div></div>`).join('');
 }
 
@@ -1049,6 +1056,7 @@ async function loadFromGist(){
     const content=JSON.parse(gist.files[GIST_FILE].content);
     D=content.data||_D_STATIC;
     ACTIONS=content.actions||_ACTIONS_STATIC;
+    if(content.news){try{window.NEWS=JSON.parse(content.news);}catch(e){}}
     const ts=content.updatedAt||new Date(gist.updated_at).toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'})+' IST';
     showBadge('&#x25cf; Live &nbsp;<span style="font-weight:400;opacity:.8">'+ts+'</span>','#059669',4000);
   }catch(err){
